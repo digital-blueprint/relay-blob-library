@@ -1,0 +1,15 @@
+includes:
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-symfony/extension.neon
+
+parameters:
+    inferPrivatePropertyTypeFromConstructor: true
+    level: 3
+    paths:
+        - src
+        - tests
+    excludePaths:
+        - tests/bootstrap.php
+        - src/DualDeliveryApi/Types/EBInterface
+        - src/DualDeliveryApi/Types/XMLDsig
+        - src/DualDeliveryApi/Types/SAML
