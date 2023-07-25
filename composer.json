@@ -1,68 +1,75 @@
 {
-    "name": "dbp/relay-blob-library",
-    "type": "library",
-    "license": "AGPL-3.0-or-later",
-    "require": {
-        "php": ">=7.3",
-        "guzzlehttp/guzzle": "^7.0",
-        "web-token/jwt-key-mgmt": "^2.2",
-        "web-token/jwt-signature": "^2.2",
-        "web-token/jwt-signature-algorithm-hmac": "^2.2",
-        "ext-json": "*"
-    },
-    "require-dev": {
-        "friendsofphp/php-cs-fixer": "^3.0",
-        "phpstan/phpstan": "^1.0.0",
-        "phpstan/phpstan-phpunit": "^1.0.0",
-        "phpstan/phpstan-symfony": "^1.2",
-        "phpunit/phpunit": "^9",
-        "symfony/browser-kit": "^5.4",
-        "symfony/http-client": "^5.4",
-        "symfony/phpunit-bridge": "^5.2",
-        "vimeo/psalm": "^4.2.1"
-    },
-    "autoload": {
-        "psr-4": {
-            "Dbp\\Relay\\BlobLibrary\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Dbp\\Relay\\BlobLibrary\\Tests\\": "tests/"
-        }
-    },
-    "config": {
-        "sort-packages": true,
-        "platform": {
-            "php": "7.3"
-        },
-        "allow-plugins": {
-            "composer/package-versions-deprecated": false
-        }
-    },
-    "scripts": {
-        "test": [
-            "@php vendor/bin/phpunit"
-        ],
-        "phpstan": [
-            "@php vendor/bin/phpstan analyze --ansi"
-        ],
-        "psalm": [
-            "@php vendor/bin/psalm"
-        ],
-        "lint": [
-            "@composer run cs",
-            "@composer run phpstan",
-            "@composer run psalm"
-        ],
-        "cs-fix": [
-            "@php vendor/bin/php-cs-fixer --ansi fix"
-        ],
-        "cs": [
-            "@php vendor/bin/php-cs-fixer --ansi fix --dry-run --diff"
-        ],
-        "coverage": [
-            "@php -dxdebug.mode=coverage vendor/bin/phpunit --coverage-html _coverage"
-        ]
+  "name": "dbp/relay-blob-library",
+  "description": "PHP helper library for interaction with the relay-blob-bundle.",
+  "type": "library",
+  "license": "AGPL-3.0-or-later",
+  "authors": [
+    {
+      "name": "Patrizio Bekerle",
+      "homepage": "https://github.com/pbek"
     }
+  ],
+  "require": {
+    "php": ">=7.3",
+    "guzzlehttp/guzzle": "^7.0",
+    "web-token/jwt-key-mgmt": "^2.2",
+    "web-token/jwt-signature": "^2.2",
+    "web-token/jwt-signature-algorithm-hmac": "^2.2",
+    "ext-json": "*"
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "^3.0",
+    "phpstan/phpstan": "^1.0.0",
+    "phpstan/phpstan-phpunit": "^1.0.0",
+    "phpstan/phpstan-symfony": "^1.2",
+    "phpunit/phpunit": "^9",
+    "symfony/browser-kit": "^5.4",
+    "symfony/http-client": "^5.4",
+    "symfony/phpunit-bridge": "^5.2",
+    "vimeo/psalm": "^4.2.1"
+  },
+  "autoload": {
+    "psr-4": {
+      "Dbp\\Relay\\BlobLibrary\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Dbp\\Relay\\BlobLibrary\\Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "sort-packages": true,
+    "platform": {
+      "php": "7.3"
+    },
+    "allow-plugins": {
+      "composer/package-versions-deprecated": false
+    }
+  },
+  "scripts": {
+    "test": [
+      "@php vendor/bin/phpunit"
+    ],
+    "phpstan": [
+      "@php vendor/bin/phpstan analyze --ansi"
+    ],
+    "psalm": [
+      "@php vendor/bin/psalm"
+    ],
+    "lint": [
+      "@composer run cs",
+      "@composer run phpstan",
+      "@composer run psalm"
+    ],
+    "cs-fix": [
+      "@php vendor/bin/php-cs-fixer --ansi fix"
+    ],
+    "cs": [
+      "@php vendor/bin/php-cs-fixer --ansi fix --dry-run --diff"
+    ],
+    "coverage": [
+      "@php -dxdebug.mode=coverage vendor/bin/phpunit --coverage-html _coverage"
+    ]
+  }
 }
