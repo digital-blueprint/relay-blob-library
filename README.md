@@ -5,4 +5,4 @@
 
 [![Test](https://github.com/digital-blueprint/relay-blob-library/actions/workflows/test.yml/badge.svg)](https://github.com/digital-blueprint/relay-blob-library/actions/workflows/test.yml)
 
-Helper library for interaction with the [relay-blob-bundle](https://github.com/digital-blueprint/relay-blob-bundle).
+PHP helper library for interaction with the [relay-blob-bundle](https://github.com/digital-blueprint/relay-blob-bundle).
