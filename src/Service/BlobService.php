@@ -10,7 +10,6 @@ use GuzzleHttp\Exception\GuzzleException;
 
 class BlobService
 {
-
     /**
      * @var mixed
      */
@@ -19,7 +18,6 @@ class BlobService
      * @var mixed
      */
     private $blobBucketId;
-
 
     /**
      * @var string
