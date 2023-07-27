@@ -22,6 +22,7 @@ use Dbp\Relay\BlobLibrary\Helpers\Error;
 
 // The blob base url is the url of your API server where the relay-blob-bundle is installed
 $blobBaseUrl = 'https://api.your.server';
+
 // See https://github.com/digital-blueprint/relay-blob-bundle#configuration for more information about the blob bucket id and key
 $blobBucketId = 'your-bucket-id';
 $blobKey = 'your-blob-key';
