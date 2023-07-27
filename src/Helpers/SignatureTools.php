@@ -11,7 +11,7 @@ use Jose\Component\Signature\Algorithm\HS256;
 use Jose\Component\Signature\JWSBuilder;
 use Jose\Component\Signature\Serializer\CompactSerializer;
 
-class BlobSignatureTools
+class SignatureTools
 {
     /**
      * Create a JWS token.
