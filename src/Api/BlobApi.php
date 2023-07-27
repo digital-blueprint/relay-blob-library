@@ -52,7 +52,7 @@ class BlobApi
     /**
      * @throws Error
      */
-    public function deleteBlobFileByIdentifier(string $identifier): void
+    public function deleteFileByIdentifier(string $identifier): void
     {
         $queryParams = [
             'bucketID' => $this->blobBucketId,
@@ -80,7 +80,7 @@ class BlobApi
     /**
      * @throws Error
      */
-    public function deleteBlobFilesByPrefix(string $prefix): void
+    public function deleteFilesByPrefix(string $prefix): void
     {
         $queryParams = [
             'bucketID' => $this->blobBucketId,

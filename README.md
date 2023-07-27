@@ -51,14 +51,14 @@ try {
 
 // Delete a file from the blob storage by identifier
 try {
-    $blobApi->deleteBlobFileByIdentifier($identifier);
+    $blobApi->deleteFileByIdentifier($identifier);
 } catch (Error $e) {
     // Handle error, print $e->getMessage() for more information
 }
 
 // Delete all files from the blob storage by prefix
 try {
-    $blobApi->deleteBlobFilesByPrefix($prefix);
+    $blobApi->deleteFilesByPrefix($prefix);
 } catch (Error $e) {
     // Handle error, print $e->getMessage() for more information
 }
