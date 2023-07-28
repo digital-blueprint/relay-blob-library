@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.4
+
+- add `\Dbp\Relay\BlobLibrary\Helpers\SignatureTools::verify`
+- add `SignatureTools` tests
+
 ## 0.1.3
 
 - Extract and add more methods
