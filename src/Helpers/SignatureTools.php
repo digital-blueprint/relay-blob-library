@@ -94,6 +94,31 @@ class SignatureTools
         return $ok;
     }
 
+    /**
+     * Verify a JWS token.
+     *
+     * @param string $secret to create the (symmetric) JWK from
+     * @param string $token  to verify
+     *
+     * @return array extracted payload from token
+     *
+     * @throws \JsonException
+     * @throws Error
+     */
+    public static function verify(string $secret, string $token): array
+    {
+        $jwk = SignatureTools::createJWK($secret);
+        $payload = [];
+
+        if (!SignatureTools::verifyToken($jwk, $token, $payload)) {
+            /* @noinspection ForgottenDebugOutputInspection */
+            //dump(['token' => $token, 'payload' => $payload, 'secret' => $secret]);
+            throw Error::withDetails('Signature invalid');
+        }
+
+        return $payload;
+    }
+
     public static function generateSha256Checksum($data): string
     {
         return hash('sha256', $data);
