@@ -25,6 +25,9 @@ class Error extends \Exception
         parent::__construct($code, json_encode($decoded), $previous);
     }
 
+    /**
+     * @throws \JsonException
+     */
     public static function withDetails(?string $message = '', array $errorDetails = [], int $code = 0): Error
     {
         $message = [
