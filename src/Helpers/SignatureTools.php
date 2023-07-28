@@ -9,7 +9,9 @@ use Jose\Component\Core\JWK;
 use Jose\Component\KeyManagement\JWKFactory;
 use Jose\Component\Signature\Algorithm\HS256;
 use Jose\Component\Signature\JWSBuilder;
+use Jose\Component\Signature\JWSVerifier;
 use Jose\Component\Signature\Serializer\CompactSerializer;
+use Jose\Component\Signature\Serializer\JWSSerializerManager;
 
 class SignatureTools
 {
@@ -66,5 +68,34 @@ class SignatureTools
             ->build();
 
         return (new CompactSerializer())->serialize($jws, 0);
+    }
+
+    /**
+     * Verify a JWS token.
+     *
+     * @param string $token   the JWS token as string
+     * @param array  $payload to extract from token on success
+     *
+     * @throws \JsonException
+     */
+    public static function verifyToken(JWK $jwk, string $token, array &$payload): bool
+    {
+        $algorithmManager = new AlgorithmManager([new HS256()]);
+        $jwsVerifier = new JWSVerifier($algorithmManager);
+        $serializerManager = new JWSSerializerManager([new CompactSerializer()]);
+        $jws = $serializerManager->unserialize($token);
+
+        if ($ok = $jwsVerifier->verifyWithKey($jws, $jwk, 0)) {
+            $payload = json_decode($jws->getPayload(), true, 512, JSON_THROW_ON_ERROR);
+        }
+//        $ok = $jwsVerifier->verifyWithKey($jws, $jwk, 0);
+//        $payload = json_decode($jws->getPayload(), true, 512, JSON_THROW_ON_ERROR);
+
+        return $ok;
+    }
+
+    public static function generateSha256Checksum($data): string
+    {
+        return hash('sha256', $data);
     }
 }

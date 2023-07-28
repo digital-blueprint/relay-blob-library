@@ -44,11 +44,6 @@ class BlobApi
         }
     }
 
-    private function generateSha256ChecksumFromUrl($url): string
-    {
-        return hash('sha256', $url);
-    }
-
     /**
      * @throws Error
      */
@@ -159,7 +154,7 @@ class BlobApi
             'prefix' => $prefix,
             'action' => 'CREATEONE',
             'fileName' => $fileName,
-            'fileHash' => hash('sha256', $fileData),
+            'fileHash' => SignatureTools::generateSha256Checksum($fileData),
         ];
 
         $url = $this->getSignedBlobFilesUrl($queryParams);
@@ -207,7 +202,7 @@ class BlobApi
         // It's mandatory that "%20" is used instead of "+" for spaces in the query string, otherwise the checksum will be invalid!
         $urlPart = $path.'?'.http_build_query($queryParams, '', '&', PHP_QUERY_RFC3986);
 
-        $checksum = $this->generateSha256ChecksumFromUrl($urlPart);
+        $checksum = SignatureTools::generateSha256Checksum($urlPart);
 
         $payload = [
             'cs' => $checksum,

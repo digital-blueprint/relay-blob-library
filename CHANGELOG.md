@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3
+
+- Extract and add more methods
+
 ## 0.1.2
 
 - Refactor `\Dbp\Relay\BlobLibrary\Api\BlobApi::deleteBlobFileByIdentifier` to `\Dbp\Relay\BlobLibrary\Api\BlobApi::deleteFileByIdentifier`
