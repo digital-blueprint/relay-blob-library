@@ -141,7 +141,6 @@ class BlobApi
             if ($e->getCode() === 404) {
                 throw Error::withDetails('File was not found!', ['identifier' => $identifier, 'message' => $e->getMessage()]);
             }
-
         }
 
         $result = $r->getBody()->getContents();
