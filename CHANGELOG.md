@@ -3,6 +3,7 @@
 ## next
 
 - Fix error class constructor
+- Improve error handling
 
 ## 0.1.4
 

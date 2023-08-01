@@ -120,7 +120,7 @@ class BlobApi
     }
 
     /**
-     * @throws Error
+     * @throws Error|\JsonException
      */
     public function downloadFileAsContentUrlByIdentifier(string $identifier): string
     {
@@ -137,7 +137,11 @@ class BlobApi
         try {
             $r = $this->client->request('GET', $url);
         } catch (GuzzleException $e) {
-            throw Error::withDetails('File could not be downloaded from Blob!', ['identifier' => $identifier, 'message' => $e->getMessage()]);
+            // TODO: Handle 404 errors distinctively
+            if ($e->getCode() === 404) {
+                throw Error::withDetails('File was not found!', ['identifier' => $identifier, 'message' => $e->getMessage()]);
+            }
+
         }
 
         $result = $r->getBody()->getContents();
@@ -181,7 +185,7 @@ class BlobApi
                 ],
             ]);
         } catch (GuzzleException $e) {
-            throw Error::withDetails('File could not be uploaded to Blob!', ['identifier' => $prefix, 'fileName' => $fileName, 'message' => $e->getMessage()]);
+            throw Error::withDetails('File could not be uploaded to Blob!', ['prefix' => $prefix, 'fileName' => $fileName, 'message' => $e->getMessage()]);
         }
 
         $result = $r->getBody()->getContents();
@@ -189,7 +193,7 @@ class BlobApi
         $identifier = $jsonData['identifier'] ?? '';
 
         if ($identifier === '') {
-            throw Error::withDetails('File could not be uploaded to Blob!', ['identifier' => $prefix, 'fileName' => $fileName, 'message' => 'No identifier returned from Blob!']);
+            throw Error::withDetails('File could not be uploaded to Blob!', ['prefix' => $prefix, 'fileName' => $fileName, 'message' => 'No identifier returned from Blob!']);
         }
 
         // Return the blob file ID
