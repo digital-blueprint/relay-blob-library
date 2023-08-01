@@ -25,11 +25,23 @@ class BlobApi
      */
     private $blobBaseUrl;
 
+    /**
+     * @var Client
+     */
+    private $client;
+
     public function __construct(string $blobBaseUrl, string $blobBucketId, $blobKey)
     {
         $this->blobBaseUrl = $blobBaseUrl;
         $this->blobKey = $blobKey;
         $this->blobBucketId = $blobBucketId;
+
+        $this->client = new Client();
+    }
+
+    public function setClient(Client $client): void
+    {
+        $this->client = $client;
     }
 
     /**
@@ -58,9 +70,8 @@ class BlobApi
         $url = $this->getSignedBlobFilesUrl($queryParams, $identifier);
 
         // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
-        $client = new Client();
         try {
-            $r = $client->request('DELETE', $url);
+            $r = $this->client->request('DELETE', $url);
         } catch (GuzzleException $e) {
             throw Error::withDetails('File could not be deleted from Blob!', ['identifier' => $identifier, 'message' => $e->getMessage()]);
         }
@@ -89,9 +100,8 @@ class BlobApi
         // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
         // We send a DELETE request to the blob service to delete all files with the given prefix,
         // regardless if we have files in dispatch or not, we just want to make sure that the blob files are deleted
-        $client = new Client();
         try {
-            $r = $client->request('DELETE', $url);
+            $r = $this->client->request('DELETE', $url);
         } catch (GuzzleException $e) {
             // 404 errors are ok, because the files might not exist anymore
             if ($e->getCode() === 404) {
@@ -124,9 +134,8 @@ class BlobApi
         $url = $this->getSignedBlobFilesUrl($queryParams, $identifier);
 
         // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
-        $client = new Client();
         try {
-            $r = $client->request('GET', $url);
+            $r = $this->client->request('GET', $url);
         } catch (GuzzleException $e) {
             throw Error::withDetails('File could not be downloaded from Blob!', ['identifier' => $identifier, 'message' => $e->getMessage()]);
         }
@@ -144,7 +153,7 @@ class BlobApi
     }
 
     /**
-     * @throws Error
+     * @throws Error|\JsonException
      */
     public function uploadFile(string $prefix, string $fileName, string $fileData): string
     {
@@ -161,9 +170,8 @@ class BlobApi
 
         // Post to Blob
         // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
-        $client = new Client();
         try {
-            $r = $client->request('POST', $url, [
+            $r = $this->client->request('POST', $url, [
                 'multipart' => [
                     [
                         'name' => 'file',
