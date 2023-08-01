@@ -22,7 +22,7 @@ class Error extends \Exception
             ];
         }
 
-        parent::__construct($code, json_encode($decoded), $previous);
+        parent::__construct(json_encode($decoded), $code, $previous);
     }
 
     /**

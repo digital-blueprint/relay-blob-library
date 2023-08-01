@@ -1,9 +1,13 @@
 # Changelog
 
+## next
+
+- Fix error class constructor
+
 ## 0.1.4
 
-- add `\Dbp\Relay\BlobLibrary\Helpers\SignatureTools::verify`
-- add `SignatureTools` tests
+- Add `\Dbp\Relay\BlobLibrary\Helpers\SignatureTools::verify`
+- Add `SignatureTools` tests
 
 ## 0.1.3
 
