@@ -137,10 +137,12 @@ class BlobApi
         try {
             $r = $this->client->request('GET', $url);
         } catch (GuzzleException $e) {
-            // TODO: Handle 404 errors distinctively
+            // Handle 404 errors distinctively
             if ($e->getCode() === 404) {
-                throw Error::withDetails('File was not found!', ['identifier' => $identifier, 'message' => $e->getMessage()]);
+                throw Error::withDetails('File was not found!', ['identifier' => $identifier]);
             }
+
+            throw Error::withDetails('File could not be downloaded from Blob!', ['identifier' => $identifier, 'message' => $e->getMessage()]);
         }
 
         $result = $r->getBody()->getContents();
