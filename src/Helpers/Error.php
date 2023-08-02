@@ -28,12 +28,13 @@ class Error extends \Exception
     /**
      * @throws \JsonException
      */
-    public static function withDetails(?string $message = '', array $errorDetails = [], int $code = 0): Error
+    public static function withDetails(?string $message = '', string $errorId = '', array $errorDetails = [], int $code = 0): Error
     {
         $message = [
             'code' => $code,
             'message' => $message,
             'errorDetails' => $errorDetails,
+            'errorId' => $errorId,
         ];
 
         return new Error(json_encode($message), self::WITHDETAILSSTATUS);

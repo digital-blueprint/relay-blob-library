@@ -52,7 +52,7 @@ class BlobApi
         try {
             return SignatureTools::create($this->blobKey, $payload);
         } catch (\JsonException $e) {
-            throw Error::withDetails('Payload could not be signed for blob storage!', ['message' => $e->getMessage()]);
+            throw Error::withDetails('Payload could not be signed for blob storage!', 'blob-library:json-exception', ['message' => $e->getMessage()]);
         }
     }
 
@@ -73,7 +73,7 @@ class BlobApi
         try {
             $r = $this->client->request('DELETE', $url);
         } catch (GuzzleException $e) {
-            throw Error::withDetails('File could not be deleted from Blob!', ['identifier' => $identifier, 'message' => $e->getMessage()]);
+            throw Error::withDetails('File could not be deleted from Blob!', 'blob-library:todo', ['identifier' => $identifier, 'message' => $e->getMessage()]);
         }
 
         $statusCode = $r->getStatusCode();

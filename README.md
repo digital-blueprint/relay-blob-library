@@ -64,3 +64,19 @@ try {
     // Handle error, print $e->getMessage() for more information
 }
 ```
+
+## Error Codes
+
+### BlobApi::deleteFileByIdentifier
+
+| errorId | Description                             |
+| - |-----------------------------------------|
+| `blob-library:json-exception` | Internal exception while encoding JSON |
+
+
+### Every API call
+
+| errorId             | Description                             |
+|---------------------|-----------------------------------------|
+| `blob-library:todo` | Internal exception while encoding JSON |
+
