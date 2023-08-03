@@ -163,7 +163,7 @@ class BlobApi
     }
 
     /**
-     * @throws Error|\JsonException
+     * @throws Error
      */
     public function uploadFile(string $prefix, string $fileName, string $fileData): string
     {
