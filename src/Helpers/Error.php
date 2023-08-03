@@ -6,12 +6,17 @@ namespace Dbp\Relay\BlobLibrary\Helpers;
 
 class Error extends \Exception
 {
-    private const WITHDETAILSSTATUS = -1;
+    private const WITH_DETAILS_STATUS = -1;
 
     public function __construct(?string $message = '', int $code = 0, \Throwable $previous = null)
     {
-        if ($code === self::WITHDETAILSSTATUS) {
-            $decoded = json_decode($message, true, 512, JSON_THROW_ON_ERROR);
+        if ($code === self::WITH_DETAILS_STATUS) {
+            try {
+                $decoded = json_decode($message, true, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException $e) {
+                $decoded = [];
+            }
+
             $code = $decoded['code'];
             unset($decoded['code']);
         } else {
@@ -25,9 +30,6 @@ class Error extends \Exception
         parent::__construct(json_encode($decoded), $code, $previous);
     }
 
-    /**
-     * @throws \JsonException
-     */
     public static function withDetails(?string $message = '', string $errorId = '', array $errorDetails = [], int $code = 0): Error
     {
         $message = [
@@ -37,6 +39,6 @@ class Error extends \Exception
             'errorId' => $errorId,
         ];
 
-        return new Error(json_encode($message), self::WITHDETAILSSTATUS);
+        return new Error(json_encode($message), self::WITH_DETAILS_STATUS);
     }
 }
