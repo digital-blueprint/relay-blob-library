@@ -51,6 +51,7 @@ class BlobApiTest extends TestCase
             $jsonData = json_decode($e->getMessage(), true);
             $errorDetails = $jsonData['errorDetails'];
             $this->assertEquals('File could not be uploaded to Blob!', $jsonData['message']);
+            $this->assertEquals('blob-library:upload-file-failed', $jsonData['errorId']);
             $this->assertEquals('No identifier returned from Blob!', $errorDetails['message']);
             $this->assertEquals('prefix', $errorDetails['prefix']);
             $this->assertEquals('test.txt', $errorDetails['fileName']);
@@ -63,7 +64,12 @@ class BlobApiTest extends TestCase
             new Response(200, [], '{"identifier":"1234"}'),
         ]);
 
-        $identifier = $this->blobApi->uploadFile('prefix', 'test.txt', 'data');
+        try {
+            $identifier = $this->blobApi->uploadFile('prefix', 'test.txt', 'data');
+        } catch (Error $e) {
+            $this->fail('Unexpected exception thrown!');
+        }
+
         $this->assertEquals('1234', $identifier);
     }
 
@@ -79,6 +85,7 @@ class BlobApiTest extends TestCase
             $jsonData = json_decode($e->getMessage(), true);
             $errorDetails = $jsonData['errorDetails'];
 //            $this->assertEquals('File could not be downloaded from Blob!', $jsonData['message']);
+            $this->assertEquals('blob-library:download-file-not-found', $jsonData['errorId']);
             $this->assertEquals('File was not found!', $jsonData['message']);
             $this->assertEquals('1234', $errorDetails['identifier']);
         }
