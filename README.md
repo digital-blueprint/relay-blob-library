@@ -67,16 +67,41 @@ try {
 
 ## Error Codes
 
+### BlobApi::uploadFile
+
+| errorId                                   | Description                   |
+|-------------------------------------------|-------------------------------|
+| `blob-library:upload-file-failed`         | The upload of the file failed |
+
+### BlobApi::downloadFileAsContentUrlByIdentifier
+
+| errorId                                   | Description                                                 |
+|-------------------------------------------|-------------------------------------------------------------|
+| `blob-library:download-file-not-found`    | The file to download was not found                          |
+| `blob-library:download-file-failed`       | The download of the file failed                             |
+| `blob-library:download-content-url-empty` | The `contentUrl` attribute of the downloaded file was empty |
+
 ### BlobApi::deleteFileByIdentifier
 
-| errorId | Description                             |
-| - |-----------------------------------------|
+| errorId                           | Description              |
+|-----------------------------------|--------------------------|
+| `blob-library:delete-file-failed` | Deleting the file failed |
+
+### BlobApi::deleteFilesByPrefix
+
+| errorId                            | Description               |
+|------------------------------------|---------------------------|
+| `blob-library:delete-files-failed` | Deleting the files failed |
+
+### SignatureTools::verify
+
+| errorId                          | Description                                   |
+|----------------------------------|-----------------------------------------------|
+| `blob-library:invalid-signature` | The signature was invalid, while verifying it |
+
+### General
+
+| errorId                       | Description                            |
+|-------------------------------|----------------------------------------|
 | `blob-library:json-exception` | Internal exception while encoding JSON |
-
-
-### Every API call
-
-| errorId             | Description                             |
-|---------------------|-----------------------------------------|
-| `blob-library:todo` | Internal exception while encoding JSON |
 

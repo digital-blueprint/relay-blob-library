@@ -113,7 +113,7 @@ class SignatureTools
         if (!SignatureTools::verifyToken($jwk, $token, $payload)) {
             /* @noinspection ForgottenDebugOutputInspection */
             //dump(['token' => $token, 'payload' => $payload, 'secret' => $secret]);
-            throw Error::withDetails('Signature invalid');
+            throw Error::withDetails('Invalid signature', 'blob-library:invalid-signature');
         }
 
         return $payload;

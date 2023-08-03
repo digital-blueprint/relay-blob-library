@@ -73,13 +73,13 @@ class BlobApi
         try {
             $r = $this->client->request('DELETE', $url);
         } catch (GuzzleException $e) {
-            throw Error::withDetails('File could not be deleted from Blob!', 'blob-library:todo', ['identifier' => $identifier, 'message' => $e->getMessage()]);
+            throw Error::withDetails('File could not be deleted from Blob!', 'blob-library:delete-file-failed', ['identifier' => $identifier, 'message' => $e->getMessage()]);
         }
 
         $statusCode = $r->getStatusCode();
 
         if ($statusCode !== 204) {
-            throw Error::withDetails('RequestFile could not be deleted from Blob!', ['identifier' => $identifier, 'message' => 'Blob returned status code '.$statusCode]);
+            throw Error::withDetails('File could not be deleted from Blob!', 'blob-library:delete-file-failed', ['identifier' => $identifier, 'message' => 'Blob returned status code '.$statusCode]);
         }
     }
 
@@ -108,14 +108,14 @@ class BlobApi
                 return;
             }
 
-            throw Error::withDetails('Files could not be deleted from Blob!', ['prefix' => $prefix, 'message' => $e->getMessage()]);
+            throw Error::withDetails('Files could not be deleted from Blob!', 'blob-library:delete-files-failed', ['prefix' => $prefix, 'message' => $e->getMessage()]);
         }
 
         $statusCode = $r->getStatusCode();
 
         // 404 errors are ok, because the files might not exist anymore
         if ($statusCode !== 204 && $statusCode !== 404) {
-            throw Error::withDetails('Files could not be deleted from Blob!', ['prefix' => $prefix, 'message' => 'Blob returned status code '.$statusCode]);
+            throw Error::withDetails('Files could not be deleted from Blob!', 'blob-library:delete-files-failed', ['prefix' => $prefix, 'message' => 'Blob returned status code '.$statusCode]);
         }
     }
 
@@ -139,10 +139,10 @@ class BlobApi
         } catch (GuzzleException $e) {
             // Handle 404 errors distinctively
             if ($e->getCode() === 404) {
-                throw Error::withDetails('File was not found!', ['identifier' => $identifier]);
+                throw Error::withDetails('File was not found!', 'blob-library:download-file-not-found', ['identifier' => $identifier]);
             }
 
-            throw Error::withDetails('File could not be downloaded from Blob!', ['identifier' => $identifier, 'message' => $e->getMessage()]);
+            throw Error::withDetails('File could not be downloaded from Blob!', 'blob-library:download-file-failed', ['identifier' => $identifier, 'message' => $e->getMessage()]);
         }
 
         $result = $r->getBody()->getContents();
@@ -151,7 +151,7 @@ class BlobApi
         $contentUrl = $jsonData['contentUrl'] ?? '';
 
         if ($contentUrl === '') {
-            throw Error::withDetails('File could not be downloaded from Blob!', ['identifier' => $identifier, 'message' => 'No contentUrl returned from Blob!']);
+            throw Error::withDetails('File could not be downloaded from Blob!', 'blob-library:download-content-url-empty', ['identifier' => $identifier, 'message' => 'No contentUrl returned from Blob!']);
         }
 
         return $contentUrl;
@@ -186,7 +186,7 @@ class BlobApi
                 ],
             ]);
         } catch (GuzzleException $e) {
-            throw Error::withDetails('File could not be uploaded to Blob!', ['prefix' => $prefix, 'fileName' => $fileName, 'message' => $e->getMessage()]);
+            throw Error::withDetails('File could not be uploaded to Blob!', 'blob-library:upload-file-failed', ['prefix' => $prefix, 'fileName' => $fileName, 'message' => $e->getMessage()]);
         }
 
         $result = $r->getBody()->getContents();
@@ -194,7 +194,7 @@ class BlobApi
         $identifier = $jsonData['identifier'] ?? '';
 
         if ($identifier === '') {
-            throw Error::withDetails('File could not be uploaded to Blob!', ['prefix' => $prefix, 'fileName' => $fileName, 'message' => 'No identifier returned from Blob!']);
+            throw Error::withDetails('File could not be uploaded to Blob!', 'blob-library:upload-file-failed', ['prefix' => $prefix, 'fileName' => $fileName, 'message' => 'No identifier returned from Blob!']);
         }
 
         // Return the blob file ID
