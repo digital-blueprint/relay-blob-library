@@ -120,7 +120,7 @@ class BlobApi
     }
 
     /**
-     * @throws Error|\JsonException
+     * @throws Error
      */
     public function downloadFileAsContentUrlByIdentifier(string $identifier): string
     {
@@ -146,7 +146,12 @@ class BlobApi
         }
 
         $result = $r->getBody()->getContents();
-        $jsonData = json_decode($result, true);
+
+        try {
+            $jsonData = json_decode($result, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            throw Error::withDetails('Result could not be decoded!', 'blob-library:json-exception', ['message' => $e->getMessage()]);
+        }
 
         $contentUrl = $jsonData['contentUrl'] ?? '';
 
