@@ -76,7 +76,7 @@ class SignatureTools
      * @param string $token   the JWS token as string
      * @param array  $payload to extract from token on success
      *
-     * @throws \JsonException
+     * @throws Error
      */
     public static function verifyToken(JWK $jwk, string $token, array &$payload): bool
     {
@@ -86,7 +86,11 @@ class SignatureTools
         $jws = $serializerManager->unserialize($token);
 
         if ($ok = $jwsVerifier->verifyWithKey($jws, $jwk, 0)) {
-            $payload = json_decode($jws->getPayload(), true, 512, JSON_THROW_ON_ERROR);
+            try {
+                $payload = json_decode($jws->getPayload(), true, 512, JSON_THROW_ON_ERROR);
+            } catch (\JsonException $e) {
+                throw Error::withDetails('Payload could not be decoded!', 'blob-library:json-exception', ['message' => $e->getMessage()]);
+            }
         }
 //        $ok = $jwsVerifier->verifyWithKey($jws, $jwk, 0);
 //        $payload = json_decode($jws->getPayload(), true, 512, JSON_THROW_ON_ERROR);
@@ -102,7 +106,6 @@ class SignatureTools
      *
      * @return array extracted payload from token
      *
-     * @throws \JsonException
      * @throws Error
      */
     public static function verify(string $secret, string $token): array
