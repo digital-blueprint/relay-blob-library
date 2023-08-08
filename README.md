@@ -69,9 +69,10 @@ try {
 
 ### BlobApi::uploadFile
 
-| errorId                                   | Description                   |
-|-------------------------------------------|-------------------------------|
-| `blob-library:upload-file-failed`         | The upload of the file failed |
+| errorId                            | Description                                             |
+|------------------------------------|---------------------------------------------------------|
+| `blob-library:upload-file-failed`  | The upload of the file failed                           |
+| `blob-library:upload-file-timeout` | The request is too old and timed out! Please try again. |
 
 ### BlobApi::downloadFileAsContentUrlByIdentifier
 
@@ -80,6 +81,7 @@ try {
 | `blob-library:download-file-not-found`    | The file to download was not found                          |
 | `blob-library:download-file-failed`       | The download of the file failed                             |
 | `blob-library:download-content-url-empty` | The `contentUrl` attribute of the downloaded file was empty |
+| `blob-library:download-file-timeout`      | The request is too old and timed out! Please try again.     |
 
 ### BlobApi::deleteFileByIdentifier
 

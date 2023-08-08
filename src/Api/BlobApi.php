@@ -7,6 +7,7 @@ namespace Dbp\Relay\BlobLibrary\Api;
 use Dbp\Relay\BlobLibrary\Helpers\Error;
 use Dbp\Relay\BlobLibrary\Helpers\SignatureTools;
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
 
 class BlobApi
@@ -136,10 +137,25 @@ class BlobApi
         // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
         try {
             $r = $this->client->request('GET', $url);
-        } catch (GuzzleException $e) {
-            // Handle 404 errors distinctively
-            if ($e->getCode() === 404) {
-                throw Error::withDetails('File was not found!', 'blob-library:download-file-not-found', ['identifier' => $identifier]);
+        } catch (\Exception $e) {
+            // Handle ClientExceptions, GuzzleExceptions will be caught by the general Exception handler
+            if ($e instanceof ClientException && $e->hasResponse()) {
+                $response = $e->getResponse();
+                $statusCode = $response->getStatusCode();
+
+                switch ($statusCode) {
+                    case 404:
+                        // Handle 404 errors distinctively
+                        throw Error::withDetails('File was not found!', 'blob-library:download-file-not-found', ['identifier' => $identifier]);
+                    case 403:
+                        $body = $response->getBody()->getContents();
+                        $errorId = Error::decodeErrorId($body);
+
+                        if ($errorId === 'blob:check-signature-creation-time-too-old') {
+                            // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
+                            throw Error::withDetails('Request too old and timed out! Please try again.', 'blob-library:download-file-timeout', ['identifier' => $identifier, 'message' => $e->getMessage()]);
+                        }
+                }
             }
 
             throw Error::withDetails('File could not be downloaded from Blob!', 'blob-library:download-file-failed', ['identifier' => $identifier, 'message' => $e->getMessage()]);
@@ -190,7 +206,24 @@ class BlobApi
                     ],
                 ],
             ]);
-        } catch (GuzzleException $e) {
+        } catch (\Exception $e) {
+            // Handle ClientExceptions, GuzzleExceptions will be caught by the general Exception handler
+            if ($e instanceof ClientException && $e->hasResponse()) {
+                $response = $e->getResponse();
+                $statusCode = $response->getStatusCode();
+
+                switch ($statusCode) {
+                    case 403:
+                        $body = $response->getBody()->getContents();
+                        $errorId = Error::decodeErrorId($body);
+
+                        if ($errorId === 'blob:create-file-data-creation-time-too-old') {
+                            // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
+                            throw Error::withDetails('Request too old and timed out! Please try again.', 'blob-library:upload-file-timeout', ['message' => $e->getMessage()]);
+                        }
+                }
+            }
+
             throw Error::withDetails('File could not be uploaded to Blob!', 'blob-library:upload-file-failed', ['prefix' => $prefix, 'fileName' => $fileName, 'message' => $e->getMessage()]);
         }
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## Next
+
+- Some error codes from the blob bundle are now used in the error handling
+
 ## 0.1.5
 
 - Fix error class constructor

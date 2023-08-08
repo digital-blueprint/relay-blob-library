@@ -41,4 +41,18 @@ class Error extends \Exception
 
         return new Error(json_encode($message), self::WITH_DETAILS_STATUS);
     }
+
+    /**
+     * Decode the error id from the body of a request.
+     */
+    public static function decodeErrorId(string $body): string
+    {
+        try {
+            $jsonData = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            return '';
+        }
+
+        return $jsonData['errorId'] ?? '';
+    }
 }

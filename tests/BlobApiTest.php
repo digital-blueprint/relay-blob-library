@@ -58,6 +58,20 @@ class BlobApiTest extends TestCase
         }
     }
 
+    public function testUploadFileTimeout(): void
+    {
+        $this->createMockClient([
+            new Response(403, [], '{"errorId":"blob:create-file-data-creation-time-too-old"}'),
+        ]);
+
+        try {
+            $this->blobApi->uploadFile('prefix', 'test.txt', 'data');
+        } catch (Error $e) {
+            $jsonData = json_decode($e->getMessage(), true);
+            $this->assertEquals('blob-library:upload-file-timeout', $jsonData['errorId']);
+        }
+    }
+
     public function testUploadFileSuccess(): void
     {
         $this->createMockClient([
@@ -83,10 +97,28 @@ class BlobApiTest extends TestCase
             $this->blobApi->downloadFileAsContentUrlByIdentifier('1234');
         } catch (Error $e) {
             $jsonData = json_decode($e->getMessage(), true);
-            $errorDetails = $jsonData['errorDetails'];
 //            $this->assertEquals('File could not be downloaded from Blob!', $jsonData['message']);
             $this->assertEquals('blob-library:download-file-not-found', $jsonData['errorId']);
             $this->assertEquals('File was not found!', $jsonData['message']);
+
+            $errorDetails = $jsonData['errorDetails'];
+            $this->assertEquals('1234', $errorDetails['identifier']);
+        }
+    }
+
+    public function testDownloadFileTimeout(): void
+    {
+        $this->createMockClient([
+            new Response(403, [], '{"errorId":"blob:check-signature-creation-time-too-old"}'),
+        ]);
+
+        try {
+            $this->blobApi->downloadFileAsContentUrlByIdentifier('1234');
+        } catch (Error $e) {
+            $jsonData = json_decode($e->getMessage(), true);
+            $this->assertEquals('blob-library:download-file-timeout', $jsonData['errorId']);
+
+            $errorDetails = $jsonData['errorDetails'];
             $this->assertEquals('1234', $errorDetails['identifier']);
         }
     }
