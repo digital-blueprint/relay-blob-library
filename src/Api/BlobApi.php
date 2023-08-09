@@ -9,6 +9,7 @@ use Dbp\Relay\BlobLibrary\Helpers\SignatureTools;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\ServerException;
 
 class BlobApi
 {
@@ -207,20 +208,31 @@ class BlobApi
                 ],
             ]);
         } catch (\Exception $e) {
-            // Handle ClientExceptions, GuzzleExceptions will be caught by the general Exception handler
-            if ($e instanceof ClientException && $e->hasResponse()) {
+            // Handle ClientExceptions (403) and ServerException (500)
+            // GuzzleExceptions will be caught by the general Exception handler
+            if (($e instanceof ClientException || $e instanceof ServerException) && $e->hasResponse()) {
                 $response = $e->getResponse();
                 $statusCode = $response->getStatusCode();
+                $body = $response->getBody()->getContents();
+                $errorId = Error::decodeErrorId($body);
 
                 switch ($statusCode) {
                     case 403:
-                        $body = $response->getBody()->getContents();
-                        $errorId = Error::decodeErrorId($body);
-
                         if ($errorId === 'blob:create-file-data-creation-time-too-old') {
                             // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
                             throw Error::withDetails('Request too old and timed out! Please try again.', 'blob-library:upload-file-timeout', ['message' => $e->getMessage()]);
                         }
+                        break;
+                    case 500:
+                        if ($errorId === 'blob:file-not-saved') {
+                            throw Error::withDetails('File could not be saved!', 'blob-library:upload-file-not-saved', ['message' => $e->getMessage()]);
+                        }
+                        break;
+                    case 507:
+                        if ($errorId === 'blob:create-file-data-bucket-quota-reached') {
+                            throw Error::withDetails('Bucket quota is reached!', 'blob-library:upload-file-bucket-quota-reached', ['message' => $e->getMessage()]);
+                        }
+                        break;
                 }
             }
 

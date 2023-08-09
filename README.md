@@ -69,10 +69,12 @@ try {
 
 ### BlobApi::uploadFile
 
-| errorId                            | Description                                             |
-|------------------------------------|---------------------------------------------------------|
-| `blob-library:upload-file-failed`  | The upload of the file failed                           |
-| `blob-library:upload-file-timeout` | The request is too old and timed out! Please try again. |
+| errorId                                         | Description                                             |
+|-------------------------------------------------|---------------------------------------------------------|
+| `blob-library:upload-file-failed`               | The upload of the file failed                           |
+| `blob-library:upload-file-timeout`              | The request is too old and timed out! Please try again. |
+| `blob-library:upload-file-not-saved`            | File could not be saved!                                |
+| `blob-library:upload-file-bucket-quota-reached` | Bucket quota is reached!                                |
 
 ### BlobApi::downloadFileAsContentUrlByIdentifier
 
