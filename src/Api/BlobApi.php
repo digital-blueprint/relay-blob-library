@@ -8,7 +8,6 @@ use Dbp\Relay\BlobLibrary\Helpers\Error;
 use Dbp\Relay\BlobLibrary\Helpers\SignatureTools;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
-use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\ServerException;
 
 class BlobApi
