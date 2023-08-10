@@ -82,21 +82,19 @@ class BlobApi
 
                 switch ($statusCode) {
                     case 404:
-                        // Handle 404 errors distinctively
-                        throw Error::withDetails('File was not found!', 'blob-library:download-file-not-found', ['identifier' => $identifier]);
+                        // 404 errors are ok, because the file might not exist anymore
+                        return;
                     case 403:
                         $body = $response->getBody()->getContents();
                         $errorId = Error::decodeErrorId($body);
 
                         if ($errorId === 'blob:check-signature-creation-time-too-old') {
                             // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
-                            throw Error::withDetails('Request too old and timed out! Please try again.', 'blob-library:download-file-timeout', ['identifier' => $identifier, 'message' => $e->getMessage()]);
+                            throw Error::withDetails('Request too old and timed out! Please try again.', 'blob-library:delete-file-timeout', ['identifier' => $identifier, 'message' => $e->getMessage()]);
                         }
                 }
             }
 
-            throw Error::withDetails('File could not be downloaded from Blob!', 'blob-library:download-file-failed', ['identifier' => $identifier, 'message' => $e->getMessage()]);
-        } catch (GuzzleException $e) {
             throw Error::withDetails('File could not be deleted from Blob!', 'blob-library:delete-file-failed', ['identifier' => $identifier, 'message' => $e->getMessage()]);
         }
 
@@ -126,10 +124,25 @@ class BlobApi
         // regardless if we have files in dispatch or not, we just want to make sure that the blob files are deleted
         try {
             $r = $this->client->request('DELETE', $url);
-        } catch (GuzzleException $e) {
-            // 404 errors are ok, because the files might not exist anymore
-            if ($e->getCode() === 404) {
-                return;
+        } catch (\Exception $e) {
+            // Handle ClientExceptions. GuzzleExceptions will be caught by the general Exception handler
+            if ($e instanceof ClientException && $e->hasResponse()) {
+                $response = $e->getResponse();
+                $statusCode = $response->getStatusCode();
+
+                switch ($statusCode) {
+                    case 404:
+                        // 404 errors are ok, because the files might not exist anymore
+                        return;
+                    case 403:
+                        $body = $response->getBody()->getContents();
+                        $errorId = Error::decodeErrorId($body);
+
+                        if ($errorId === 'blob:delete-file-data-by-prefix-creation-time-too-old') {
+                            // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
+                            throw Error::withDetails('Request too old and timed out! Please try again.', 'blob-library:delete-files-timeout', ['prefix' => $prefix, 'message' => $e->getMessage()]);
+                        }
+                }
             }
 
             throw Error::withDetails('Files could not be deleted from Blob!', 'blob-library:delete-files-failed', ['prefix' => $prefix, 'message' => $e->getMessage()]);

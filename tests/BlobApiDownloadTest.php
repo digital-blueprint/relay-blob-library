@@ -44,4 +44,19 @@ class BlobApiDownloadTest extends BlobApiTestBase
             $this->assertEquals('1234', $errorDetails['identifier']);
         }
     }
+
+    public function testDownloadFileSuccess(): void
+    {
+        $this->createMockClient([
+            new Response(200, [], '{"contentUrl":"some-data"}'),
+        ]);
+
+        try {
+            $contentUrl = $this->blobApi->downloadFileAsContentUrlByIdentifier('1234');
+        } catch (Error $e) {
+            $this->fail('Unexpected exception thrown!');
+        }
+
+        $this->assertEquals('some-data', $contentUrl);
+    }
 }

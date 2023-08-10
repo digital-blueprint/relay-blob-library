@@ -87,15 +87,17 @@ try {
 
 ### BlobApi::deleteFileByIdentifier
 
-| errorId                           | Description              |
-|-----------------------------------|--------------------------|
-| `blob-library:delete-file-failed` | Deleting the file failed |
+| errorId                                           | Description                                             |
+|---------------------------------------------------|---------------------------------------------------------|
+| `blob-library:delete-file-failed`                 | Deleting the file failed                                |
+| `blob-library:delete-file-timeout`                | The request is too old and timed out! Please try again. |
 
 ### BlobApi::deleteFilesByPrefix
 
-| errorId                            | Description               |
-|------------------------------------|---------------------------|
-| `blob-library:delete-files-failed` | Deleting the files failed |
+| errorId                             | Description                                             |
+|-------------------------------------|---------------------------------------------------------|
+| `blob-library:delete-files-failed`  | Deleting the files failed                               |
+| `blob-library:delete-files-timeout` | The request is too old and timed out! Please try again. |
 
 ### SignatureTools::verify
 
