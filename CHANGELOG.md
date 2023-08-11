@@ -1,8 +1,9 @@
 # Changelog
 
-## Next
+## 0.1.6
 
-- Some error codes from the blob bundle are now used in the error handling
+- Improve error handling and use error codes from the blob bundle
+- Add lots of unit tests
 
 ## 0.1.5
 
