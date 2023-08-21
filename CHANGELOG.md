@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.7
+
+- Adapt PHP API for breaking changes in blob bundle version 0.1.14
+
 ## 0.1.6
 
 - Improve error handling and use error codes from the blob bundle

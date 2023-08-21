@@ -65,7 +65,7 @@ class BlobApi
         $queryParams = [
             'bucketID' => $this->blobBucketId,
             'creationTime' => date('U'),
-            'action' => 'DELETEONE',
+            'method' => 'DELETE',
         ];
 
         $url = $this->getSignedBlobFilesUrl($queryParams, $identifier);
@@ -113,7 +113,7 @@ class BlobApi
             'bucketID' => $this->blobBucketId,
             'creationTime' => date('U'),
             'prefix' => $prefix,
-            'action' => 'DELETEALL',
+            'method' => 'DELETE',
         ];
 
         $url = $this->getSignedBlobFilesUrl($queryParams);
@@ -163,8 +163,8 @@ class BlobApi
         $queryParams = [
             'bucketID' => $this->blobBucketId,
             'creationTime' => date('U'),
-            'action' => 'GETONE',
-            'binary' => 1,
+            'method' => 'GET',
+            'includeData' => 1,
         ];
 
         $url = $this->getSignedBlobFilesUrl($queryParams, $identifier);
@@ -222,7 +222,7 @@ class BlobApi
             'bucketID' => $this->blobBucketId,
             'creationTime' => date('U'),
             'prefix' => $prefix,
-            'action' => 'CREATEONE',
+            'method' => 'POST',
             'fileName' => $fileName,
             'fileHash' => SignatureTools::generateSha256Checksum($fileData),
         ];
