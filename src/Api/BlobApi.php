@@ -158,6 +158,58 @@ class BlobApi
     /**
      * @throws Error
      */
+    public function getFileDataByIdentifier(string $identifier, int $includeData = 1): array
+    {
+        $queryParams = [
+            'bucketID' => $this->blobBucketId,
+            'creationTime' => date('U'),
+            'method' => 'GET',
+            'includeData' => $includeData,
+        ];
+
+        $url = $this->getSignedBlobFilesUrl($queryParams, $identifier);
+
+        // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
+        try {
+            $r = $this->client->request('GET', $url);
+        } catch (\Exception $e) {
+            // Handle ClientExceptions. GuzzleExceptions will be caught by the general Exception handler
+            if ($e instanceof ClientException && $e->hasResponse()) {
+                $response = $e->getResponse();
+                $statusCode = $response->getStatusCode();
+
+                switch ($statusCode) {
+                    case 404:
+                        // Handle 404 errors distinctively
+                        throw Error::withDetails('File was not found!', 'blob-library:download-file-not-found', ['identifier' => $identifier]);
+                    case 403:
+                        $body = $response->getBody()->getContents();
+                        $errorId = Error::decodeErrorId($body);
+
+                        if ($errorId === 'blob:check-signature-creation-time-too-old') {
+                            // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
+                            throw Error::withDetails('Request too old and timed out! Please try again.', 'blob-library:download-file-timeout', ['identifier' => $identifier, 'message' => $e->getMessage()]);
+                        }
+                }
+            }
+
+            throw Error::withDetails('File could not be downloaded from Blob!', 'blob-library:download-file-failed', ['identifier' => $identifier, 'message' => $e->getMessage()]);
+        }
+
+        $result = $r->getBody()->getContents();
+
+        try {
+            $jsonData = json_decode($result, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            throw Error::withDetails('Result could not be decoded!', 'blob-library:json-exception', ['message' => $e->getMessage()]);
+        }
+
+        return $jsonData;
+    }
+
+    /**
+     * @throws Error
+     */
     public function downloadFileAsContentUrlByIdentifier(string $identifier): string
     {
         $queryParams = [
@@ -216,7 +268,7 @@ class BlobApi
     /**
      * @throws Error
      */
-    public function uploadFile(string $prefix, string $fileName, string $fileData): string
+    public function uploadFile(string $prefix, string $fileName, string $fileData, string $additionalMetadata = '', string $additionalType = ''): string
     {
         $queryParams = [
             'bucketID' => $this->blobBucketId,
@@ -227,12 +279,12 @@ class BlobApi
             'fileHash' => SignatureTools::generateSha256Checksum($fileData),
         ];
 
-        $url = $this->getSignedBlobFilesUrl($queryParams);
+        $url = $this->getSignedBlobFilesUrlWithBody($queryParams, $additionalMetadata, $additionalType);
 
         // Post to Blob
         // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
         try {
-            $r = $this->client->request('POST', $url, [
+            $options = [
                 'multipart' => [
                     [
                         'name' => 'file',
@@ -240,7 +292,25 @@ class BlobApi
                         'filename' => $fileName,
                     ],
                 ],
-            ]);
+            ];
+            if ($additionalType) {
+                array_push($options['multipart'],
+                    [
+                    'name' => 'additionalMetadata',
+                    'contents' => $additionalMetadata,
+                    ],
+                    [
+                    'name' => 'additionalType',
+                    'contents' => $additionalType,
+                    ]
+                );
+            } elseif ($additionalMetadata) {
+                $options['multipart'][] = [
+                    'name' => 'additionalMetadata',
+                    'contents' => $additionalMetadata,
+                ];
+            }
+            $r = $this->client->request('POST', $url, $options);
         } catch (\Exception $e) {
             // Handle ClientExceptions (403) and ServerException (500)
             // GuzzleExceptions will be caught by the general Exception handler
@@ -302,7 +372,41 @@ class BlobApi
         $checksum = SignatureTools::generateSha256Checksum($urlPart);
 
         $payload = [
-            'cs' => $checksum,
+            'ucs' => $checksum,
+        ];
+
+        $token = $this->createBlobSignature($payload);
+
+        return $this->blobBaseUrl.$urlPart.'&sig='.$token;
+    }
+
+    /**
+     * @throws Error
+     */
+    protected function getSignedBlobFilesUrlWithBody(array $queryParams, string $additionalMetadata = '', string $additionalType = ''): string
+    {
+        $path = '/blob/files';
+
+        $body = [];
+
+        // It's mandatory that "%20" is used instead of "+" for spaces in the query string, otherwise the checksum will be invalid!
+        $urlPart = $path.'?'.http_build_query($queryParams, '', '&', PHP_QUERY_RFC3986);
+
+        if ($additionalMetadata) {
+            $body['additionalMetadata'] = $additionalMetadata;
+        }
+        if ($additionalType) {
+            $body['additionalType'] = $additionalType;
+        }
+
+        $body = json_encode($body, JSON_FORCE_OBJECT);
+
+        $checksum = SignatureTools::generateSha256Checksum($urlPart);
+        $bcs = SignatureTools::generateSha256Checksum($body);
+
+        $payload = [
+            'ucs' => $checksum,
+            'bcs' => $bcs,
         ];
 
         $token = $this->createBlobSignature($payload);
