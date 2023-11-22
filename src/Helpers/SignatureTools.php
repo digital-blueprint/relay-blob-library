@@ -12,7 +12,6 @@ use Jose\Component\Signature\JWSBuilder;
 use Jose\Component\Signature\JWSVerifier;
 use Jose\Component\Signature\Serializer\CompactSerializer;
 use Jose\Component\Signature\Serializer\JWSSerializerManager;
-use Symfony\Component\HttpFoundation\Request;
 
 class SignatureTools
 {
@@ -126,23 +125,5 @@ class SignatureTools
     public static function generateSha256Checksum($data): string
     {
         return hash('sha256', $data);
-    }
-
-    /**
-     * Generates a sha256 hash from the request body, given as json string.
-     * @throws Error
-     */
-    public static function generateSha256FromBody(string $body): string
-    {
-        $body = '';
-
-        if (!json_decode($body, true)) {
-            throw Error::withDetails('Invalid body', 'blob-library:no-valid-json-as-body');
-        }
-
-        assert(is_string($body));
-
-        // generate hmac sha256 hash over the body
-        return SignatureTools::generateSha256Checksum($body);
     }
 }
