@@ -65,6 +65,17 @@ try {
 }
 ```
 
+## API
+| API                                                                                                                             | Returns | Description                                                                                                                                |
+|---------------------------------------------------------------------------------------------------------------------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| `deleteFileByIdentifier(string $identifier)`                                                                                    | void    | Deletes the blob fileData with the given blob identifier                                                                                   |
+| `deleteFilesByPrefix(string $prefix)`                                                                                           | void    | Deletes the blob fileDatas that have the given blob prefix                                                                                 |
+| `getFileDataByIdentifier(string $identifier, int $includeData = 1)`                                                             | array   | Returns the whole FileData with the given blob identifier. If $includeData=1, then the contentUrl contains the base64 encoded binary file. |
+| `downloadFileAsContentUrlByIdentifier(string $identifier)`                                                                      | string  | Returns the base64 encoded fileData with the given blob identifier                                                                         |
+| `uploadFile(string $prefix, string $fileName, string $fileData, string $additionalMetadata = '', string $additionalType = '')`  | string  | Uploads the given `$fileData` and associates the given data `$prefix`, `$fileName`, `$additionalMetadata` and `$additionalType` to it.     |
+
+There is also a `.php` file with usage examples in the directory `examples/`.
+
 ## Error Codes
 
 ### BlobApi::uploadFile
