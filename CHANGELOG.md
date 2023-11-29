@@ -1,8 +1,8 @@
 # Changelog
 
-## Next
+## 0.1.8
 
-- Adapt PHP API for breaking changes in blob bundle version x.x.x
+- Adapt PHP API for breaking changes in blob bundle version 0.1.18
 - Add function to retrieve blob file metadata
 - Add examples/ directory with example usages of the blob API in play php
 
