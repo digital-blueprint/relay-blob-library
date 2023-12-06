@@ -207,6 +207,56 @@ class BlobApi
         return $jsonData;
     }
 
+    public function getFileDataByPrefix(string $prefix, int $includeData = 1): array
+    {
+        $queryParams = [
+            'bucketID' => $this->blobBucketId,
+            'creationTime' => date('U'),
+            'prefix' => $prefix,
+            'method' => 'GET',
+            'includeData' => $includeData,
+        ];
+
+        $url = $this->getSignedBlobFilesUrl($queryParams);
+
+        // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
+        try {
+            $r = $this->client->request('GET', $url);
+        } catch (\Exception $e) {
+            // Handle ClientExceptions. GuzzleExceptions will be caught by the general Exception handler
+            if ($e instanceof ClientException && $e->hasResponse()) {
+                $response = $e->getResponse();
+                $statusCode = $response->getStatusCode();
+
+                switch ($statusCode) {
+                    case 404:
+                        // Handle 404 errors distinctively
+                        throw Error::withDetails('Files were not found!', 'blob-library:download-file-not-found', ['prefix' => $prefix]);
+                    case 403:
+                        $body = $response->getBody()->getContents();
+                        $errorId = Error::decodeErrorId($body);
+
+                        if ($errorId === 'blob:check-signature-creation-time-too-old') {
+                            // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
+                            throw Error::withDetails('Request too old and timed out! Please try again.', 'blob-library:download-file-timeout', ['prefix' => $prefix, 'message' => $e->getMessage()]);
+                        }
+                }
+            }
+
+            throw Error::withDetails('File could not be downloaded from Blob!', 'blob-library:download-file-failed', ['prefix' => $prefix, 'message' => $e->getMessage()]);
+        }
+
+        $result = $r->getBody()->getContents();
+
+        try {
+            $jsonData = json_decode($result, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            throw Error::withDetails('Result could not be decoded!', 'blob-library:json-exception', ['message' => $e->getMessage()]);
+        }
+
+        return $jsonData;
+    }
+
     /**
      * @throws Error
      */
@@ -358,6 +408,77 @@ class BlobApi
     /**
      * @throws Error
      */
+    public function putFileByIdentifier(string $identifier, string $fileName = '', string $additionalMetadata = '', string $additionalType = ''): string
+    {
+        $queryParams = [
+            'bucketID' => $this->blobBucketId,
+            'creationTime' => date('U'),
+            'method' => 'PUT',
+        ];
+
+        $url = $this->getSignedBlobFilesUrlWithBody($queryParams, $additionalMetadata, $additionalType, $fileName, $identifier);
+
+        $body = [];
+
+        if ($fileName) {
+            $body['fileName'] = $fileName;
+        }
+        if ($additionalMetadata) {
+            $body['additionalMetadata'] = $additionalMetadata;
+        }
+        if ($additionalType) {
+            $body['additionalType'] = $additionalType;
+        }
+
+        // PUT to Blob
+        // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
+        try {
+            $options = [
+                'headers' => [
+                    'Accept' => 'application/ld+json',
+                    'HTTP_ACCEPT' => 'application/ld+json',
+                    'Content-Type' => 'application/json',
+                ],
+                'body' => json_encode($body),
+            ];
+            $r = $this->client->request('PUT', $url, $options);
+        } catch (\Exception $e) {
+            // Handle ClientExceptions (403) and ServerException (500)
+            // GuzzleExceptions will be caught by the general Exception handler
+            if (($e instanceof ClientException || $e instanceof ServerException) && $e->hasResponse()) {
+                $response = $e->getResponse();
+                $statusCode = $response->getStatusCode();
+                $body = $response->getBody()->getContents();
+                $errorId = Error::decodeErrorId($body);
+
+                switch ($statusCode) {
+                    case 403:
+                        if ($errorId === 'blob:create-file-data-creation-time-too-old') {
+                            // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
+                            throw Error::withDetails('Request too old and timed out! Please try again.', 'blob-library:upload-file-timeout', ['message' => $e->getMessage()]);
+                        }
+                        break;
+                }
+            }
+
+            throw Error::withDetails('File could not be uploaded to Blob!', 'blob-library:upload-file-failed', ['prefix' => $prefix, 'fileName' => $fileName, 'message' => $e->getMessage()]);
+        }
+
+        $result = $r->getBody()->getContents();
+        $jsonData = json_decode($result, true);
+        $identifier = $jsonData['identifier'] ?? '';
+
+        if ($identifier === '') {
+            throw Error::withDetails('File could not be uploaded to Blob!', 'blob-library:upload-file-failed', ['prefix' => $prefix, 'fileName' => $fileName, 'message' => 'No identifier returned from Blob!']);
+        }
+
+        // Return the blob file ID
+        return $identifier;
+    }
+
+    /**
+     * @throws Error
+     */
     protected function getSignedBlobFilesUrl(array $queryParams, string $blobIdentifier = ''): string
     {
         $path = '/blob/files';
@@ -383,15 +504,22 @@ class BlobApi
     /**
      * @throws Error
      */
-    protected function getSignedBlobFilesUrlWithBody(array $queryParams, string $additionalMetadata = '', string $additionalType = ''): string
+    protected function getSignedBlobFilesUrlWithBody(array $queryParams, string $additionalMetadata = '', string $additionalType = '', string $filename = '', string $identifier = ''): string
     {
         $path = '/blob/files';
+
+        if ($identifier) {
+            $path = $path.'/'.$identifier;
+        }
 
         $body = [];
 
         // It's mandatory that "%20" is used instead of "+" for spaces in the query string, otherwise the checksum will be invalid!
         $urlPart = $path.'?'.http_build_query($queryParams, '', '&', PHP_QUERY_RFC3986);
 
+        if ($filename) {
+            $body['fileName'] = $filename;
+        }
         if ($additionalMetadata) {
             $body['additionalMetadata'] = $additionalMetadata;
         }
