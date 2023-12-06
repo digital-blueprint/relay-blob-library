@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.9
+- Add function putFileByIdentifier to allow PUT requests to blob
+- Add function getFileDataByPrefix to allow GET collection requests of prefixes to blob
+- Improve error handling
+
 ## 0.1.8
 
 - Adapt PHP API for breaking changes in blob bundle version 0.1.18
