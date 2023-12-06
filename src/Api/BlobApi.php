@@ -478,7 +478,6 @@ class BlobApi
                             throw Error::withDetails('The bucket quota of the given bucket is reached! Please try again or contact your bucket owner.', 'blob-library:put-file-bucket-quota-reached', ['message' => $e->getMessage()]);
                         }
                         break;
-
                 }
             }
 

@@ -71,7 +71,6 @@ try {
     throw Error::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
 }
 
-
 // print response as json
 echo json_encode($content)."\n";
 
