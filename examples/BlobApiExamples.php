@@ -60,6 +60,31 @@ try {
     echo $e->getMessage()."\n";
     throw Error::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
 }
+// print response as json
+echo json_encode($content)."\n";
+
+// try to download file using the given blob id
+try {
+    $content = $blobApi->getFileDataByPrefix($prefix, 1);
+} catch (Error $e) {
+    echo $e->getMessage()."\n";
+    throw Error::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
+}
+
 
 // print response as json
 echo json_encode($content)."\n";
+
+// try to put file using the given blob id
+try {
+    $content = $blobApi->putFileByIdentifier($id, 'newFIleName.txt');
+    // print response as json
+    echo json_encode($content)."\n";
+    // get file to see if filename changed
+    $content = $blobApi->getFileDataByIdentifier($id, 1);
+    // print response as json
+    echo json_encode($content)."\n";
+} catch (Error $e) {
+    echo $e->getMessage()."\n";
+    throw Error::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
+}
