@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.10
+- Add support for `relay:errorId` in `\Dbp\Relay\BlobLibrary\Helpers\Error::decodeErrorId`
+
 ## 0.1.9
 - Add function putFileByIdentifier to allow PUT requests to blob
 - Add function getFileDataByPrefix to allow GET collection requests of prefixes to blob

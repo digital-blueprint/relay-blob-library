@@ -53,6 +53,7 @@ class Error extends \Exception
             return '';
         }
 
-        return $jsonData['errorId'] ?? '';
+        // We switched to using relay:errorId in the response body, but some services still use the old format.
+        return $jsonData['relay:errorId'] ?? $jsonData['errorId'] ?? '';
     }
 }
