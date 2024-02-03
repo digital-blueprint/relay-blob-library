@@ -4371,16 +4371,16 @@
         },
         {
             "name": "symfony/browser-kit",
-            "version": "v5.4.31",
+            "version": "v5.4.35",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/browser-kit.git",
-                "reference": "0ed1f634a36606f2065eec221b3975e05016cbbe"
+                "reference": "2f6f979b579ed1c051465c3c2fb81daf5bb4a002"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/browser-kit/zipball/0ed1f634a36606f2065eec221b3975e05016cbbe",
-                "reference": "0ed1f634a36606f2065eec221b3975e05016cbbe",
+                "url": "https://api.github.com/repos/symfony/browser-kit/zipball/2f6f979b579ed1c051465c3c2fb81daf5bb4a002",
+                "reference": "2f6f979b579ed1c051465c3c2fb81daf5bb4a002",
                 "shasum": ""
             },
             "require": {
@@ -4423,7 +4423,7 @@
             "description": "Simulates the behavior of a web browser, allowing you to make requests, click on links and submit forms programmatically",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/browser-kit/tree/v5.4.31"
+                "source": "https://github.com/symfony/browser-kit/tree/v5.4.35"
             },
             "funding": [
                 {
@@ -4439,7 +4439,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-10-31T07:58:33+00:00"
+            "time": "2024-01-23T13:51:25+00:00"
         },
         {
             "name": "symfony/console",
@@ -4542,16 +4542,16 @@
         },
         {
             "name": "symfony/dom-crawler",
-            "version": "v5.4.32",
+            "version": "v5.4.35",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/dom-crawler.git",
-                "reference": "728f1fc136252a626ba5a69c02bd66a3697ff201"
+                "reference": "e3b4806f88abf106a411847a78619a542e71de29"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/dom-crawler/zipball/728f1fc136252a626ba5a69c02bd66a3697ff201",
-                "reference": "728f1fc136252a626ba5a69c02bd66a3697ff201",
+                "url": "https://api.github.com/repos/symfony/dom-crawler/zipball/e3b4806f88abf106a411847a78619a542e71de29",
+                "reference": "e3b4806f88abf106a411847a78619a542e71de29",
                 "shasum": ""
             },
             "require": {
@@ -4597,7 +4597,7 @@
             "description": "Eases DOM navigation for HTML and XML documents",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/dom-crawler/tree/v5.4.32"
+                "source": "https://github.com/symfony/dom-crawler/tree/v5.4.35"
             },
             "funding": [
                 {
@@ -4613,7 +4613,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-11-17T20:43:48+00:00"
+            "time": "2024-01-23T13:51:25+00:00"
         },
         {
             "name": "symfony/event-dispatcher",
@@ -4908,16 +4908,16 @@
         },
         {
             "name": "symfony/http-client",
-            "version": "v5.4.34",
+            "version": "v5.4.35",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/http-client.git",
-                "reference": "8fe833b758bc5b325e9d96a913376d6d57a90fb0"
+                "reference": "53e4cc088a5f3466dc77c9f121f17e8e02ecc9c3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/http-client/zipball/8fe833b758bc5b325e9d96a913376d6d57a90fb0",
-                "reference": "8fe833b758bc5b325e9d96a913376d6d57a90fb0",
+                "url": "https://api.github.com/repos/symfony/http-client/zipball/53e4cc088a5f3466dc77c9f121f17e8e02ecc9c3",
+                "reference": "53e4cc088a5f3466dc77c9f121f17e8e02ecc9c3",
                 "shasum": ""
             },
             "require": {
@@ -4979,7 +4979,7 @@
                 "http"
             ],
             "support": {
-                "source": "https://github.com/symfony/http-client/tree/v5.4.34"
+                "source": "https://github.com/symfony/http-client/tree/v5.4.35"
             },
             "funding": [
                 {
@@ -4995,7 +4995,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-12-02T08:41:43+00:00"
+            "time": "2024-01-29T14:02:34+00:00"
         },
         {
             "name": "symfony/http-client-contracts",
@@ -5146,16 +5146,16 @@
         },
         {
             "name": "symfony/phpunit-bridge",
-            "version": "v5.4.34",
+            "version": "v5.4.35",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/phpunit-bridge.git",
-                "reference": "b3f772189bfc52e870233a040e888fc3b64c2a22"
+                "reference": "2a0216076da723aeabebef57bbb5009d0ee920f6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/phpunit-bridge/zipball/b3f772189bfc52e870233a040e888fc3b64c2a22",
-                "reference": "b3f772189bfc52e870233a040e888fc3b64c2a22",
+                "url": "https://api.github.com/repos/symfony/phpunit-bridge/zipball/2a0216076da723aeabebef57bbb5009d0ee920f6",
+                "reference": "2a0216076da723aeabebef57bbb5009d0ee920f6",
                 "shasum": ""
             },
             "require": {
@@ -5209,7 +5209,7 @@
             "description": "Provides utilities for PHPUnit, especially user deprecation notices management",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/phpunit-bridge/tree/v5.4.34"
+                "source": "https://github.com/symfony/phpunit-bridge/tree/v5.4.35"
             },
             "funding": [
                 {
@@ -5225,7 +5225,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2023-12-18T14:56:06+00:00"
+            "time": "2024-01-23T13:51:25+00:00"
         },
         {
             "name": "symfony/polyfill-ctype",
