@@ -58,13 +58,15 @@ try {
 ```
 
 ## API
-| API                                                                                                                             | Returns | Description                                                                                                                                |
-|---------------------------------------------------------------------------------------------------------------------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------------|
-| `deleteFileByIdentifier(string $identifier)`                                                                                    | void    | Deletes the blob fileData with the given blob identifier                                                                                   |
-| `deleteFilesByPrefix(string $prefix)`                                                                                           | void    | Deletes the blob fileDatas that have the given blob prefix                                                                                 |
-| `getFileDataByIdentifier(string $identifier, int $includeData = 1)`                                                             | array   | Returns the whole FileData with the given blob identifier. If $includeData=1, then the contentUrl contains the base64 encoded binary file. |
-| `downloadFileAsContentUrlByIdentifier(string $identifier)`                                                                      | string  | Returns the base64 encoded fileData with the given blob identifier                                                                         |
-| `uploadFile(string $prefix, string $fileName, string $fileData, string $additionalMetadata = '', string $additionalType = '')`  | string  | Uploads the given `$fileData` and associates the given data `$prefix`, `$fileName`, `$additionalMetadata` and `$additionalType` to it.     |
+| API                                                                                                                             | Returns | Description                                                                                                                                                        |
+|---------------------------------------------------------------------------------------------------------------------------------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `deleteFileByIdentifier(string $identifier)`                                                                                    | void    | Deletes the blob fileData with the given blob identifier                                                                                                           |
+| `deleteFilesByPrefix(string $prefix)`                                                                                           | void    | Deletes the blob fileDatas that have the given blob prefix                                                                                                         |
+| `getFileDataByIdentifier(string $identifier, int $includeData = 1)`                                                             | array   | Returns the whole FileData with the given blob identifier. If $includeData=1, then the contentUrl contains the base64 encoded binary file.                         |
+| `getFileDataByPrefix(string $prefix, int $includeData = 1)`                                                                     | array   | Returns a collection of FileDatas that were found in the given prefix. If $includeData=1, then the contentUrl contains the base64 encoded binary file.             |
+| `downloadFileAsContentUrlByIdentifier(string $identifier)`                                                                      | string  | Returns the base64 encoded fileData with the given blob identifier                                                                                                 |
+| `uploadFile(string $prefix, string $fileName, string $fileData, string $additionalMetadata = '', string $additionalType = '')`  | string  | Uploads the given `$fileData` and associates the given data `$prefix`, `$fileName`, `$additionalMetadata` and `$additionalType` to it.                             |
+| `putFileByIdentifier(string $identifier, string $fileName = '', string $additionalMetadata = '', string $additionalType = '')`  | string  | Puts given `fileName`, `additionalMetadata` and `additionalType` into the blob resource with the given `identifier`. Returns the `identifier` of the blob resource |
 
 There is also a `.php` file with usage examples in the directory `examples/`.
 
@@ -110,6 +112,8 @@ There is also a `.php` file with usage examples in the directory `examples/`.
 
 ### General
 
-| errorId                       | Description                            |
-|-------------------------------|----------------------------------------|
-| `blob-library:json-exception` | Internal exception while encoding JSON |
+| errorId                          | Description                                                                                                                                                     |
+|----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `blob-library:json-exception`    | Internal exception while encoding JSON                                                                                                                          |
+| `blob-library:signature-invalid` | Blob returned that the given signature was invalid, which indicates that either a wrong key was used or that something went wrong while signing                 |
+| `blob-library:checksum-invalid`  | Blob returned that the given checksum was invalid, which indicated that either the checksum `ucs` or `bcs` or both were wrong. However, the signature was fine. |
