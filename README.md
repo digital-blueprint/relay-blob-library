@@ -8,4 +8,4 @@
 
 PHP helper library for interaction with the [relay-blob-bundle](https://github.com/digital-blueprint/relay-blob-bundle).
 
-See the documentation for more information.
+See the [documentation](https://github.com/digital-blueprint/relay-blob-library/blob/main/docs/README.md) and [examples](https://github.com/digital-blueprint/relay-blob-library/tree/main/examples) for more information.
