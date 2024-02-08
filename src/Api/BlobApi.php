@@ -335,13 +335,15 @@ class BlobApi
     /**
      * Uploads a file to the Blob service.
      *
-     * @param string $prefix The prefix of the file.
-     * @param string $fileName The name of the file.
-     * @param string $fileData The data of the file.
-     * @param string $additionalMetadata Additional metadata for the file (optional).
-     * @param string $additionalType Additional type for the file (optional).
-     * @return string The identifier of the uploaded file.
-     * @throws BlobApiError If the file upload fails.
+     * @param string $prefix             the prefix of the file
+     * @param string $fileName           the name of the file
+     * @param string $fileData           the data of the file
+     * @param string $additionalMetadata additional metadata for the file (optional)
+     * @param string $additionalType     additional type for the file (optional)
+     *
+     * @return string the identifier of the uploaded file
+     *
+     * @throws BlobApiError if the file upload fails
      */
     public function uploadFile(string $prefix, string $fileName, string $fileData, string $additionalMetadata = '', string $additionalType = ''): string
     {
@@ -434,12 +436,14 @@ class BlobApi
     /**
      * Updates a file identified by its identifier in the Blob service.
      *
-     * @param string $identifier The identifier of the file.
-     * @param string $fileName The new name of the file (optional).
-     * @param string $additionalMetadata Additional metadata for the file (optional).
-     * @param string $additionalType Additional type for the file (optional).
-     * @return string The updated identifier of the file.
-     * @throws BlobApiError If the file update fails.
+     * @param string $identifier         the identifier of the file
+     * @param string $fileName           the new name of the file (optional)
+     * @param string $additionalMetadata additional metadata for the file (optional)
+     * @param string $additionalType     additional type for the file (optional)
+     *
+     * @return string the updated identifier of the file
+     *
+     * @throws BlobApiError if the file update fails
      */
     public function putFileByIdentifier(string $identifier, string $fileName = '', string $additionalMetadata = '', string $additionalType = ''): string
     {
