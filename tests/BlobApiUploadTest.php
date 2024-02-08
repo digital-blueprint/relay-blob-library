@@ -19,10 +19,9 @@ class BlobApiUploadTest extends BlobApiTestBase
             $this->blobApi->uploadFile('prefix', 'test.txt', 'data');
             $this->fail('Expected exception not thrown!');
         } catch (BlobApiError $e) {
-            $jsonData = json_decode($e->getMessage(), true);
-            $errorDetails = $jsonData['errorDetails'];
-            $this->assertEquals('File could not be uploaded to Blob!', $jsonData['message']);
-            $this->assertEquals('blob-library:upload-file-failed', $jsonData['errorId']);
+            $errorDetails = $e->getErrorDetails();
+            $this->assertEquals('File could not be uploaded to Blob!', $e->getMessage());
+            $this->assertEquals('blob-library:upload-file-failed', $e->getErrorId());
             $this->assertEquals('No identifier returned from Blob!', $errorDetails['message']);
             $this->assertEquals('prefix', $errorDetails['prefix']);
             $this->assertEquals('test.txt', $errorDetails['fileName']);
@@ -38,8 +37,7 @@ class BlobApiUploadTest extends BlobApiTestBase
         try {
             $this->blobApi->uploadFile('prefix', 'test.txt', 'data');
         } catch (BlobApiError $e) {
-            $jsonData = json_decode($e->getMessage(), true);
-            $this->assertEquals('blob-library:upload-file-timeout', $jsonData['errorId']);
+            $this->assertEquals('blob-library:upload-file-timeout', $e->getErrorId());
         }
     }
 
@@ -52,8 +50,7 @@ class BlobApiUploadTest extends BlobApiTestBase
         try {
             $this->blobApi->uploadFile('prefix', 'test.txt', 'data');
         } catch (BlobApiError $e) {
-            $jsonData = json_decode($e->getMessage(), true);
-            $this->assertEquals('blob-library:upload-file-not-saved', $jsonData['errorId']);
+            $this->assertEquals('blob-library:upload-file-not-saved', $e->getErrorId());
         }
     }
 
@@ -66,8 +63,7 @@ class BlobApiUploadTest extends BlobApiTestBase
         try {
             $this->blobApi->uploadFile('prefix', 'test.txt', 'data');
         } catch (BlobApiError $e) {
-            $jsonData = json_decode($e->getMessage(), true);
-            $this->assertEquals('blob-library:upload-file-bucket-quota-reached', $jsonData['errorId']);
+            $this->assertEquals('blob-library:upload-file-bucket-quota-reached', $e->getErrorId());
         }
     }
 

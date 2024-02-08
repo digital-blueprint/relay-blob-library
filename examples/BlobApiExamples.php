@@ -26,7 +26,7 @@ try {
     $id = $blobApi->uploadFile($prefix, $fileName, file_get_contents('myFile.txt'));
 } catch (BlobApiError $e) {
     echo $e->getMessage()."\n";
-    throw BlobApiError::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
+    throw new BlobApiError('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
 }
 
 // try to download file using the given blob id
@@ -34,7 +34,7 @@ try {
     $content = $blobApi->downloadFileAsContentUrlByIdentifier($id);
 } catch (BlobApiError $e) {
     echo $e->getMessage()."\n";
-    throw BlobApiError::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
+    throw new BlobApiError('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
 }
 
 // strip base64 prefix with file information from real b64 content, and decode it
@@ -50,7 +50,7 @@ try {
     $id = $blobApi->uploadFile($prefix, $fileName, file_get_contents('myFile.txt'), $additionalMetadata);
 } catch (BlobApiError $e) {
     echo $e->getMessage()."\n";
-    throw BlobApiError::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
+    throw new BlobApiError('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
 }
 
 // try to download file using the given blob id
@@ -58,7 +58,7 @@ try {
     $content = $blobApi->getFileDataByIdentifier($id, 1);
 } catch (BlobApiError $e) {
     echo $e->getMessage()."\n";
-    throw BlobApiError::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
+    throw new BlobApiError('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
 }
 // print response as json
 echo json_encode($content)."\n";
@@ -68,7 +68,7 @@ try {
     $content = $blobApi->getFileDataByPrefix($prefix, 1);
 } catch (BlobApiError $e) {
     echo $e->getMessage()."\n";
-    throw BlobApiError::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
+    throw new BlobApiError('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
 }
 
 // print response as json
@@ -85,5 +85,5 @@ try {
     echo json_encode($content)."\n";
 } catch (BlobApiError $e) {
     echo $e->getMessage()."\n";
-    throw BlobApiError::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
+    throw new BlobApiError('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
 }

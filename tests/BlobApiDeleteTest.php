@@ -36,10 +36,9 @@ class BlobApiDeleteTest extends BlobApiTestBase
         try {
             $this->blobApi->deleteFileByIdentifier('1234');
         } catch (BlobApiError $e) {
-            $jsonData = json_decode($e->getMessage(), true);
-            $this->assertEquals('blob-library:delete-file-timeout', $jsonData['errorId']);
+            $this->assertEquals('blob-library:delete-file-timeout', $e->getErrorId());
 
-            $errorDetails = $jsonData['errorDetails'];
+            $errorDetails = $e->getErrorDetails();
             $this->assertEquals('1234', $errorDetails['identifier']);
         }
     }
@@ -53,10 +52,9 @@ class BlobApiDeleteTest extends BlobApiTestBase
         try {
             $this->blobApi->deleteFileByIdentifier('1234');
         } catch (BlobApiError $e) {
-            $jsonData = json_decode($e->getMessage(), true);
-            $this->assertEquals('blob-library:delete-file-failed', $jsonData['errorId']);
+            $this->assertEquals('blob-library:delete-file-failed', $e->getErrorId());
 
-            $errorDetails = $jsonData['errorDetails'];
+            $errorDetails = $e->getErrorDetails();
             $this->assertEquals('1234', $errorDetails['identifier']);
         }
     }
@@ -88,10 +86,9 @@ class BlobApiDeleteTest extends BlobApiTestBase
         try {
             $this->blobApi->deleteFilesByPrefix('my-prefix');
         } catch (BlobApiError $e) {
-            $jsonData = json_decode($e->getMessage(), true);
-            $this->assertEquals('blob-library:delete-files-timeout', $jsonData['errorId']);
+            $this->assertEquals('blob-library:delete-files-timeout', $e->getErrorId());
 
-            $errorDetails = $jsonData['errorDetails'];
+            $errorDetails = $e->getErrorDetails();
             $this->assertEquals('my-prefix', $errorDetails['prefix']);
         }
     }
@@ -105,10 +102,9 @@ class BlobApiDeleteTest extends BlobApiTestBase
         try {
             $this->blobApi->deleteFilesByPrefix('my-prefix');
         } catch (BlobApiError $e) {
-            $jsonData = json_decode($e->getMessage(), true);
-            $this->assertEquals('blob-library:delete-files-failed', $jsonData['errorId']);
+            $this->assertEquals('blob-library:delete-files-failed', $e->getErrorId());
 
-            $errorDetails = $jsonData['errorDetails'];
+            $errorDetails = $e->getErrorDetails();
             $this->assertEquals('my-prefix', $errorDetails['prefix']);
         }
     }

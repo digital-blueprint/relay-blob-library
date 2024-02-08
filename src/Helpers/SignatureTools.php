@@ -90,7 +90,7 @@ class SignatureTools
             try {
                 $payload = json_decode($jws->getPayload(), true, 512, JSON_THROW_ON_ERROR);
             } catch (\JsonException $e) {
-                throw BlobApiError::withDetails('Payload could not be decoded!', 'blob-library:json-exception', ['message' => $e->getMessage()]);
+                throw new BlobApiError('Payload could not be decoded!', 'blob-library:json-exception', ['message' => $e->getMessage()]);
             }
         }
 //        $ok = $jwsVerifier->verifyWithKey($jws, $jwk, 0);
@@ -117,7 +117,7 @@ class SignatureTools
         if (!SignatureTools::verifyToken($jwk, $token, $payload)) {
             /* @noinspection ForgottenDebugOutputInspection */
             //dump(['token' => $token, 'payload' => $payload, 'secret' => $secret]);
-            throw BlobApiError::withDetails('Invalid signature', 'blob-library:invalid-signature');
+            throw new BlobApiError('Invalid signature', 'blob-library:invalid-signature');
         }
 
         return $payload;

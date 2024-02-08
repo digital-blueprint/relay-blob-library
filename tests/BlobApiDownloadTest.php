@@ -18,12 +18,11 @@ class BlobApiDownloadTest extends BlobApiTestBase
         try {
             $this->blobApi->downloadFileAsContentUrlByIdentifier('1234');
         } catch (BlobApiError $e) {
-            $jsonData = json_decode($e->getMessage(), true);
-//            $this->assertEquals('File could not be downloaded from Blob!', $jsonData['message']);
-            $this->assertEquals('blob-library:download-file-not-found', $jsonData['errorId']);
-            $this->assertEquals('File was not found!', $jsonData['message']);
+//            $this->assertEquals('File could not be downloaded from Blob!', $e->getMessage());
+            $this->assertEquals('blob-library:download-file-not-found', $e->getErrorId());
+            $this->assertEquals('File was not found!', $e->getMessage());
 
-            $errorDetails = $jsonData['errorDetails'];
+            $errorDetails = $e->getErrorDetails();
             $this->assertEquals('1234', $errorDetails['identifier']);
         }
     }
@@ -37,10 +36,9 @@ class BlobApiDownloadTest extends BlobApiTestBase
         try {
             $this->blobApi->downloadFileAsContentUrlByIdentifier('1234');
         } catch (BlobApiError $e) {
-            $jsonData = json_decode($e->getMessage(), true);
-            $this->assertEquals('blob-library:download-file-timeout', $jsonData['errorId']);
+            $this->assertEquals('blob-library:download-file-timeout', $e->getErrorId());
 
-            $errorDetails = $jsonData['errorDetails'];
+            $errorDetails = $e->getErrorDetails();
             $this->assertEquals('1234', $errorDetails['identifier']);
         }
     }

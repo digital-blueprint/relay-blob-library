@@ -106,8 +106,7 @@ class SignedPayloadTest extends TestCase
             $token = SignatureTools::create($secret, $payload);
             SignatureTools::verify($secret2, $token);
         } catch (BlobApiError $e) {
-            $jsonData = json_decode($e->getMessage(), true);
-            $this->assertEquals('blob-library:invalid-signature', $jsonData['errorId']);
+            $this->assertEquals('blob-library:invalid-signature', $e->getErrorId());
 
             return;
         } catch (\JsonException $e) {
