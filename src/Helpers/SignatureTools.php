@@ -90,7 +90,7 @@ class SignatureTools
             try {
                 $payload = json_decode($jws->getPayload(), true, 512, JSON_THROW_ON_ERROR);
             } catch (\JsonException $e) {
-                throw new BlobApiError('Payload could not be decoded!', 'blob-library:json-exception', ['message' => $e->getMessage()]);
+                throw new BlobApiError('Payload could not be decoded!', BlobApiError::ERROR_ID_JSON_EXCEPTION, ['message' => $e->getMessage()]);
             }
         }
 //        $ok = $jwsVerifier->verifyWithKey($jws, $jwk, 0);

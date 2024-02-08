@@ -36,7 +36,7 @@ class BlobApiDeleteTest extends BlobApiTestBase
         try {
             $this->blobApi->deleteFileByIdentifier('1234');
         } catch (BlobApiError $e) {
-            $this->assertEquals('blob-library:delete-file-timeout', $e->getErrorId());
+            $this->assertEquals(BlobApiError::ERROR_ID_DELETE_FILE_TIMEOUT, $e->getErrorId());
 
             $errorDetails = $e->getErrorDetails();
             $this->assertEquals('1234', $errorDetails['identifier']);
@@ -52,7 +52,7 @@ class BlobApiDeleteTest extends BlobApiTestBase
         try {
             $this->blobApi->deleteFileByIdentifier('1234');
         } catch (BlobApiError $e) {
-            $this->assertEquals('blob-library:delete-file-failed', $e->getErrorId());
+            $this->assertEquals(BlobApiError::ERROR_ID_DELETE_FILE_FAILED, $e->getErrorId());
 
             $errorDetails = $e->getErrorDetails();
             $this->assertEquals('1234', $errorDetails['identifier']);
@@ -86,7 +86,7 @@ class BlobApiDeleteTest extends BlobApiTestBase
         try {
             $this->blobApi->deleteFilesByPrefix('my-prefix');
         } catch (BlobApiError $e) {
-            $this->assertEquals('blob-library:delete-files-timeout', $e->getErrorId());
+            $this->assertEquals(BlobApiError::ERROR_ID_DELETE_FILES_TIMEOUT, $e->getErrorId());
 
             $errorDetails = $e->getErrorDetails();
             $this->assertEquals('my-prefix', $errorDetails['prefix']);
@@ -102,7 +102,7 @@ class BlobApiDeleteTest extends BlobApiTestBase
         try {
             $this->blobApi->deleteFilesByPrefix('my-prefix');
         } catch (BlobApiError $e) {
-            $this->assertEquals('blob-library:delete-files-failed', $e->getErrorId());
+            $this->assertEquals(BlobApiError::ERROR_ID_DELETE_FILES_FAILED, $e->getErrorId());
 
             $errorDetails = $e->getErrorDetails();
             $this->assertEquals('my-prefix', $errorDetails['prefix']);

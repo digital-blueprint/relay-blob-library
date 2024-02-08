@@ -9,6 +9,15 @@
 | `blob-library:upload-file-not-saved`            | File could not be saved!                                |
 | `blob-library:upload-file-bucket-quota-reached` | Bucket quota is reached!                                |
 
+### BlobApi::putFileByIdentifier
+
+| errorId                                      | Description                                                                                     |
+|----------------------------------------------|-------------------------------------------------------------------------------------------------|
+| `blob-library:put-file-failed`               | The upload of the file failed                                                                   |
+| `blob-library:put-file-timeout`              | The request is too old and timed out! Please try again.                                         |
+| `blob-library:put-file-method-not-suitable`  | The given method in url is not the same as the used method! Please try again.                   |
+| `blob-library:put-file-bucket-quota-reached` | The bucket quota of the given bucket is reached! Please try again or contact your bucket owner. |
+
 ### BlobApi::downloadFileAsContentUrlByIdentifier
 
 | errorId                                   | Description                                                 |

@@ -21,7 +21,7 @@ class BlobApiUploadTest extends BlobApiTestBase
         } catch (BlobApiError $e) {
             $errorDetails = $e->getErrorDetails();
             $this->assertEquals('File could not be uploaded to Blob!', $e->getMessage());
-            $this->assertEquals('blob-library:upload-file-failed', $e->getErrorId());
+            $this->assertEquals(BlobApiError::ERROR_ID_UPLOAD_FILE_FAILED, $e->getErrorId());
             $this->assertEquals('No identifier returned from Blob!', $errorDetails['message']);
             $this->assertEquals('prefix', $errorDetails['prefix']);
             $this->assertEquals('test.txt', $errorDetails['fileName']);
@@ -37,7 +37,7 @@ class BlobApiUploadTest extends BlobApiTestBase
         try {
             $this->blobApi->uploadFile('prefix', 'test.txt', 'data');
         } catch (BlobApiError $e) {
-            $this->assertEquals('blob-library:upload-file-timeout', $e->getErrorId());
+            $this->assertEquals(BlobApiError::ERROR_ID_UPLOAD_FILE_TIMEOUT, $e->getErrorId());
         }
     }
 
@@ -50,7 +50,7 @@ class BlobApiUploadTest extends BlobApiTestBase
         try {
             $this->blobApi->uploadFile('prefix', 'test.txt', 'data');
         } catch (BlobApiError $e) {
-            $this->assertEquals('blob-library:upload-file-not-saved', $e->getErrorId());
+            $this->assertEquals(BlobApiError::ERROR_ID_UPLOAD_FILE_NOT_SAVED, $e->getErrorId());
         }
     }
 
@@ -63,7 +63,7 @@ class BlobApiUploadTest extends BlobApiTestBase
         try {
             $this->blobApi->uploadFile('prefix', 'test.txt', 'data');
         } catch (BlobApiError $e) {
-            $this->assertEquals('blob-library:upload-file-bucket-quota-reached', $e->getErrorId());
+            $this->assertEquals(BlobApiError::ERROR_ID_UPLOAD_FILE_BUCKET_QUOTA_REACHED, $e->getErrorId());
         }
     }
 
