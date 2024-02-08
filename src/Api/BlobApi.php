@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\BlobLibrary\Api;
 
-use Dbp\Relay\BlobLibrary\Helpers\Error;
 use Dbp\Relay\BlobLibrary\Helpers\SignatureTools;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\BadResponseException;
@@ -47,19 +46,19 @@ class BlobApi
     }
 
     /**
-     * @throws Error
+     * @throws BlobApiError
      */
     public function createBlobSignature($payload): string
     {
         try {
             return SignatureTools::create($this->blobKey, $payload);
         } catch (\JsonException $e) {
-            throw Error::withDetails('Payload could not be signed for blob storage!', 'blob-library:json-exception', ['message' => $e->getMessage()]);
+            throw BlobApiError::withDetails('Payload could not be signed for blob storage!', 'blob-library:json-exception', ['message' => $e->getMessage()]);
         }
     }
 
     /**
-     * @throws Error
+     * @throws BlobApiError
      */
     public function deleteFileByIdentifier(string $identifier): void
     {
@@ -86,28 +85,28 @@ class BlobApi
                         return;
                     case 403:
                         $body = $response->getBody()->getContents();
-                        $errorId = Error::decodeErrorId($body);
+                        $errorId = BlobApiError::decodeErrorId($body);
 
                         if ($errorId === 'blob:check-signature-creation-time-too-old') {
                             // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
-                            throw Error::withDetails('Request too old and timed out! Please try again.', 'blob-library:delete-file-timeout', ['identifier' => $identifier, 'message' => $e->getMessage()]);
+                            throw BlobApiError::withDetails('Request too old and timed out! Please try again.', 'blob-library:delete-file-timeout', ['identifier' => $identifier, 'message' => $e->getMessage()]);
                         }
                         $this->handleSignatureError($errorId, $e);
                 }
             }
 
-            throw Error::withDetails('File could not be deleted from Blob!', 'blob-library:delete-file-failed', ['identifier' => $identifier, 'message' => $e->getMessage()]);
+            throw BlobApiError::withDetails('File could not be deleted from Blob!', 'blob-library:delete-file-failed', ['identifier' => $identifier, 'message' => $e->getMessage()]);
         }
 
         $statusCode = $r->getStatusCode();
 
         if ($statusCode !== 204) {
-            throw Error::withDetails('File could not be deleted from Blob!', 'blob-library:delete-file-failed', ['identifier' => $identifier, 'message' => 'Blob returned status code '.$statusCode]);
+            throw BlobApiError::withDetails('File could not be deleted from Blob!', 'blob-library:delete-file-failed', ['identifier' => $identifier, 'message' => 'Blob returned status code '.$statusCode]);
         }
     }
 
     /**
-     * @throws Error
+     * @throws BlobApiError
      */
     public function deleteFilesByPrefix(string $prefix): void
     {
@@ -137,29 +136,29 @@ class BlobApi
                         return;
                     case 403:
                         $body = $response->getBody()->getContents();
-                        $errorId = Error::decodeErrorId($body);
+                        $errorId = BlobApiError::decodeErrorId($body);
 
                         if ($errorId === 'blob:delete-file-data-by-prefix-creation-time-too-old') {
                             // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
-                            throw Error::withDetails('Request too old and timed out! Please try again.', 'blob-library:delete-files-timeout', ['prefix' => $prefix, 'message' => $e->getMessage()]);
+                            throw BlobApiError::withDetails('Request too old and timed out! Please try again.', 'blob-library:delete-files-timeout', ['prefix' => $prefix, 'message' => $e->getMessage()]);
                         }
                         $this->handleSignatureError($errorId, $e);
                 }
             }
 
-            throw Error::withDetails('Files could not be deleted from Blob!', 'blob-library:delete-files-failed', ['prefix' => $prefix, 'message' => $e->getMessage()]);
+            throw BlobApiError::withDetails('Files could not be deleted from Blob!', 'blob-library:delete-files-failed', ['prefix' => $prefix, 'message' => $e->getMessage()]);
         }
 
         $statusCode = $r->getStatusCode();
 
         // 404 errors are ok, because the files might not exist anymore
         if ($statusCode !== 204 && $statusCode !== 404) {
-            throw Error::withDetails('Files could not be deleted from Blob!', 'blob-library:delete-files-failed', ['prefix' => $prefix, 'message' => 'Blob returned status code '.$statusCode]);
+            throw BlobApiError::withDetails('Files could not be deleted from Blob!', 'blob-library:delete-files-failed', ['prefix' => $prefix, 'message' => 'Blob returned status code '.$statusCode]);
         }
     }
 
     /**
-     * @throws Error
+     * @throws BlobApiError
      */
     public function getFileDataByIdentifier(string $identifier, int $includeData = 1): array
     {
@@ -184,20 +183,20 @@ class BlobApi
                 switch ($statusCode) {
                     case 404:
                         // Handle 404 errors distinctively
-                        throw Error::withDetails('File was not found!', 'blob-library:download-file-not-found', ['identifier' => $identifier]);
+                        throw BlobApiError::withDetails('File was not found!', 'blob-library:download-file-not-found', ['identifier' => $identifier]);
                     case 403:
                         $body = $response->getBody()->getContents();
-                        $errorId = Error::decodeErrorId($body);
+                        $errorId = BlobApiError::decodeErrorId($body);
 
                         if ($errorId === 'blob:check-signature-creation-time-too-old') {
                             // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
-                            throw Error::withDetails('Request too old and timed out! Please try again.', 'blob-library:download-file-timeout', ['identifier' => $identifier, 'message' => $e->getMessage()]);
+                            throw BlobApiError::withDetails('Request too old and timed out! Please try again.', 'blob-library:download-file-timeout', ['identifier' => $identifier, 'message' => $e->getMessage()]);
                         }
                         $this->handleSignatureError($errorId, $e);
                 }
             }
 
-            throw Error::withDetails('File could not be downloaded from Blob!', 'blob-library:download-file-failed', ['identifier' => $identifier, 'message' => $e->getMessage()]);
+            throw BlobApiError::withDetails('File could not be downloaded from Blob!', 'blob-library:download-file-failed', ['identifier' => $identifier, 'message' => $e->getMessage()]);
         }
 
         $result = $r->getBody()->getContents();
@@ -205,7 +204,7 @@ class BlobApi
         try {
             $jsonData = json_decode($result, true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
-            throw Error::withDetails('Result could not be decoded!', 'blob-library:json-exception', ['message' => $e->getMessage()]);
+            throw BlobApiError::withDetails('Result could not be decoded!', 'blob-library:json-exception', ['message' => $e->getMessage()]);
         }
 
         return $jsonData;
@@ -235,20 +234,20 @@ class BlobApi
                 switch ($statusCode) {
                     case 404:
                         // Handle 404 errors distinctively
-                        throw Error::withDetails('Files were not found!', 'blob-library:download-file-not-found', ['prefix' => $prefix]);
+                        throw BlobApiError::withDetails('Files were not found!', 'blob-library:download-file-not-found', ['prefix' => $prefix]);
                     case 403:
                         $body = $response->getBody()->getContents();
-                        $errorId = Error::decodeErrorId($body);
+                        $errorId = BlobApiError::decodeErrorId($body);
 
                         if ($errorId === 'blob:check-signature-creation-time-too-old') {
                             // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
-                            throw Error::withDetails('Request too old and timed out! Please try again.', 'blob-library:download-file-timeout', ['prefix' => $prefix, 'message' => $e->getMessage()]);
+                            throw BlobApiError::withDetails('Request too old and timed out! Please try again.', 'blob-library:download-file-timeout', ['prefix' => $prefix, 'message' => $e->getMessage()]);
                         }
                         $this->handleSignatureError($errorId, $e);
                 }
             }
 
-            throw Error::withDetails('File could not be downloaded from Blob!', 'blob-library:download-file-failed', ['prefix' => $prefix, 'message' => $e->getMessage()]);
+            throw BlobApiError::withDetails('File could not be downloaded from Blob!', 'blob-library:download-file-failed', ['prefix' => $prefix, 'message' => $e->getMessage()]);
         }
 
         $result = $r->getBody()->getContents();
@@ -256,14 +255,14 @@ class BlobApi
         try {
             $jsonData = json_decode($result, true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
-            throw Error::withDetails('Result could not be decoded!', 'blob-library:json-exception', ['message' => $e->getMessage()]);
+            throw BlobApiError::withDetails('Result could not be decoded!', 'blob-library:json-exception', ['message' => $e->getMessage()]);
         }
 
         return $jsonData;
     }
 
     /**
-     * @throws Error
+     * @throws BlobApiError
      */
     public function downloadFileAsContentUrlByIdentifier(string $identifier): string
     {
@@ -288,20 +287,20 @@ class BlobApi
                 switch ($statusCode) {
                     case 404:
                         // Handle 404 errors distinctively
-                        throw Error::withDetails('File was not found!', 'blob-library:download-file-not-found', ['identifier' => $identifier]);
+                        throw BlobApiError::withDetails('File was not found!', 'blob-library:download-file-not-found', ['identifier' => $identifier]);
                     case 403:
                         $body = $response->getBody()->getContents();
-                        $errorId = Error::decodeErrorId($body);
+                        $errorId = BlobApiError::decodeErrorId($body);
 
                         if ($errorId === 'blob:check-signature-creation-time-too-old') {
                             // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
-                            throw Error::withDetails('Request too old and timed out! Please try again.', 'blob-library:download-file-timeout', ['identifier' => $identifier, 'message' => $e->getMessage()]);
+                            throw BlobApiError::withDetails('Request too old and timed out! Please try again.', 'blob-library:download-file-timeout', ['identifier' => $identifier, 'message' => $e->getMessage()]);
                         }
                         $this->handleSignatureError($errorId, $e);
                 }
             }
 
-            throw Error::withDetails('File could not be downloaded from Blob!', 'blob-library:download-file-failed', ['identifier' => $identifier, 'message' => $e->getMessage()]);
+            throw BlobApiError::withDetails('File could not be downloaded from Blob!', 'blob-library:download-file-failed', ['identifier' => $identifier, 'message' => $e->getMessage()]);
         }
 
         $result = $r->getBody()->getContents();
@@ -309,20 +308,20 @@ class BlobApi
         try {
             $jsonData = json_decode($result, true, 512, JSON_THROW_ON_ERROR);
         } catch (\JsonException $e) {
-            throw Error::withDetails('Result could not be decoded!', 'blob-library:json-exception', ['message' => $e->getMessage()]);
+            throw BlobApiError::withDetails('Result could not be decoded!', 'blob-library:json-exception', ['message' => $e->getMessage()]);
         }
 
         $contentUrl = $jsonData['contentUrl'] ?? '';
 
         if ($contentUrl === '') {
-            throw Error::withDetails('File could not be downloaded from Blob!', 'blob-library:download-content-url-empty', ['identifier' => $identifier, 'message' => 'No contentUrl returned from Blob!']);
+            throw BlobApiError::withDetails('File could not be downloaded from Blob!', 'blob-library:download-content-url-empty', ['identifier' => $identifier, 'message' => 'No contentUrl returned from Blob!']);
         }
 
         return $contentUrl;
     }
 
     /**
-     * @throws Error
+     * @throws BlobApiError
      */
     public function uploadFile(string $prefix, string $fileName, string $fileData, string $additionalMetadata = '', string $additionalType = ''): string
     {
@@ -374,30 +373,30 @@ class BlobApi
                 $response = $e->getResponse();
                 $statusCode = $response->getStatusCode();
                 $body = $response->getBody()->getContents();
-                $errorId = Error::decodeErrorId($body);
+                $errorId = BlobApiError::decodeErrorId($body);
 
                 switch ($statusCode) {
                     case 403:
                         if ($errorId === 'blob:create-file-data-creation-time-too-old') {
                             // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
-                            throw Error::withDetails('Request too old and timed out! Please try again.', 'blob-library:upload-file-timeout', ['message' => $e->getMessage()]);
+                            throw BlobApiError::withDetails('Request too old and timed out! Please try again.', 'blob-library:upload-file-timeout', ['message' => $e->getMessage()]);
                         }
                         $this->handleSignatureError($errorId, $e);
                         break;
                     case 500:
                         if ($errorId === 'blob:file-not-saved') {
-                            throw Error::withDetails('File could not be saved!', 'blob-library:upload-file-not-saved', ['message' => $e->getMessage()]);
+                            throw BlobApiError::withDetails('File could not be saved!', 'blob-library:upload-file-not-saved', ['message' => $e->getMessage()]);
                         }
                         break;
                     case 507:
                         if ($errorId === 'blob:create-file-data-bucket-quota-reached') {
-                            throw Error::withDetails('Bucket quota is reached!', 'blob-library:upload-file-bucket-quota-reached', ['message' => $e->getMessage()]);
+                            throw BlobApiError::withDetails('Bucket quota is reached!', 'blob-library:upload-file-bucket-quota-reached', ['message' => $e->getMessage()]);
                         }
                         break;
                 }
             }
 
-            throw Error::withDetails('File could not be uploaded to Blob!', 'blob-library:upload-file-failed', ['prefix' => $prefix, 'fileName' => $fileName, 'message' => $e->getMessage()]);
+            throw BlobApiError::withDetails('File could not be uploaded to Blob!', 'blob-library:upload-file-failed', ['prefix' => $prefix, 'fileName' => $fileName, 'message' => $e->getMessage()]);
         }
 
         $result = $r->getBody()->getContents();
@@ -405,7 +404,7 @@ class BlobApi
         $identifier = $jsonData['identifier'] ?? '';
 
         if ($identifier === '') {
-            throw Error::withDetails('File could not be uploaded to Blob!', 'blob-library:upload-file-failed', ['prefix' => $prefix, 'fileName' => $fileName, 'message' => 'No identifier returned from Blob!']);
+            throw BlobApiError::withDetails('File could not be uploaded to Blob!', 'blob-library:upload-file-failed', ['prefix' => $prefix, 'fileName' => $fileName, 'message' => 'No identifier returned from Blob!']);
         }
 
         // Return the blob file ID
@@ -413,7 +412,7 @@ class BlobApi
     }
 
     /**
-     * @throws Error
+     * @throws BlobApiError
      */
     public function putFileByIdentifier(string $identifier, string $fileName = '', string $additionalMetadata = '', string $additionalType = ''): string
     {
@@ -456,32 +455,32 @@ class BlobApi
                 $response = $e->getResponse();
                 $statusCode = $response->getStatusCode();
                 $body = $response->getBody()->getContents();
-                $errorId = Error::decodeErrorId($body);
+                $errorId = BlobApiError::decodeErrorId($body);
 
                 switch ($statusCode) {
                     case 403:
                         if ($errorId === 'blob:create-file-data-creation-time-too-old') {
                             // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
-                            throw Error::withDetails('Request too old and timed out! Please try again.', 'blob-library:upload-file-timeout', ['message' => $e->getMessage()]);
+                            throw BlobApiError::withDetails('Request too old and timed out! Please try again.', 'blob-library:upload-file-timeout', ['message' => $e->getMessage()]);
                         }
                         $this->handleSignatureError($errorId, $e);
                         break;
 
                     case 405:
                         if ($errorId === 'blob:create-file-data-method-not-suitable') {
-                            throw Error::withDetails('The given method in url is not the same as the used method! Please try again.', 'blob-library:put-file-method-not-suitable', ['message' => $e->getMessage()]);
+                            throw BlobApiError::withDetails('The given method in url is not the same as the used method! Please try again.', 'blob-library:put-file-method-not-suitable', ['message' => $e->getMessage()]);
                         }
                         break;
 
                     case 507:
                         if ($errorId === 'blob:create-file-data-bucket-quota-reached') {
-                            throw Error::withDetails('The bucket quota of the given bucket is reached! Please try again or contact your bucket owner.', 'blob-library:put-file-bucket-quota-reached', ['message' => $e->getMessage()]);
+                            throw BlobApiError::withDetails('The bucket quota of the given bucket is reached! Please try again or contact your bucket owner.', 'blob-library:put-file-bucket-quota-reached', ['message' => $e->getMessage()]);
                         }
                         break;
                 }
             }
 
-            throw Error::withDetails('File could not be uploaded to Blob!', 'blob-library:upload-file-failed', ['identifier' => $identifier, 'fileName' => $fileName, 'message' => $e->getMessage()]);
+            throw BlobApiError::withDetails('File could not be uploaded to Blob!', 'blob-library:upload-file-failed', ['identifier' => $identifier, 'fileName' => $fileName, 'message' => $e->getMessage()]);
         }
 
         $result = $r->getBody()->getContents();
@@ -489,7 +488,7 @@ class BlobApi
         $identifier = $jsonData['identifier'] ?? '';
 
         if ($identifier === '') {
-            throw Error::withDetails('File could not be uploaded to Blob!', 'blob-library:upload-file-failed', ['identifier' => $identifier, 'fileName' => $fileName, 'message' => 'No identifier returned from Blob!']);
+            throw BlobApiError::withDetails('File could not be uploaded to Blob!', 'blob-library:upload-file-failed', ['identifier' => $identifier, 'fileName' => $fileName, 'message' => 'No identifier returned from Blob!']);
         }
 
         // Return the blob file ID
@@ -497,20 +496,20 @@ class BlobApi
     }
 
     /**
-     * @throws Error
+     * @throws BlobApiError
      */
     protected function handleSignatureError(string $errorId, BadResponseException $e)
     {
         if ($errorId === 'blob:checksum-invalid') {
-            throw Error::withDetails('The signature check was successful, but one of the given checksums ucs or bcs is invalid. Please try again.', 'blob-library:checksum-invalid', ['message' => $e->getMessage()]);
+            throw BlobApiError::withDetails('The signature check was successful, but one of the given checksums ucs or bcs is invalid. Please try again.', 'blob-library:checksum-invalid', ['message' => $e->getMessage()]);
         }
         if ($errorId === 'blob:signature-invalid') {
-            throw Error::withDetails('The signature check was not successful. Maybe your key is invalid, or something went wrong while signing. Please try again', 'blob-library:signature-invalid', ['message' => $e->getMessage()]);
+            throw BlobApiError::withDetails('The signature check was not successful. Maybe your key is invalid, or something went wrong while signing. Please try again', 'blob-library:signature-invalid', ['message' => $e->getMessage()]);
         }
     }
 
     /**
-     * @throws Error
+     * @throws BlobApiError
      */
     protected function getSignedBlobFilesUrl(array $queryParams, string $blobIdentifier = ''): string
     {
@@ -535,7 +534,7 @@ class BlobApi
     }
 
     /**
-     * @throws Error
+     * @throws BlobApiError
      */
     protected function getSignedBlobFilesUrlWithBody(array $queryParams, string $additionalMetadata = '', string $additionalType = '', string $filename = '', string $identifier = ''): string
     {

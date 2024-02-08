@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\BlobLibrary\Tests;
 
-use Dbp\Relay\BlobLibrary\Helpers\Error;
+use Dbp\Relay\BlobLibrary\Api\BlobApiError;
 use Dbp\Relay\BlobLibrary\Helpers\SignatureTools;
 use PHPUnit\Framework\TestCase;
 
@@ -105,7 +105,7 @@ class SignedPayloadTest extends TestCase
         try {
             $token = SignatureTools::create($secret, $payload);
             SignatureTools::verify($secret2, $token);
-        } catch (Error $e) {
+        } catch (BlobApiError $e) {
             $jsonData = json_decode($e->getMessage(), true);
             $this->assertEquals('blob-library:invalid-signature', $jsonData['errorId']);
 

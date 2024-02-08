@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\BlobLibrary\Tests;
 
-use Dbp\Relay\BlobLibrary\Helpers\Error;
+use Dbp\Relay\BlobLibrary\Api\BlobApiError;
 use GuzzleHttp\Psr7\Response;
 
 class BlobApiDeleteTest extends BlobApiTestBase
@@ -20,7 +20,7 @@ class BlobApiDeleteTest extends BlobApiTestBase
 
         try {
             $this->blobApi->deleteFileByIdentifier('1234');
-        } catch (Error $e) {
+        } catch (BlobApiError $e) {
             $this->fail('Unexpected exception thrown!');
         }
 
@@ -35,7 +35,7 @@ class BlobApiDeleteTest extends BlobApiTestBase
 
         try {
             $this->blobApi->deleteFileByIdentifier('1234');
-        } catch (Error $e) {
+        } catch (BlobApiError $e) {
             $jsonData = json_decode($e->getMessage(), true);
             $this->assertEquals('blob-library:delete-file-timeout', $jsonData['errorId']);
 
@@ -52,7 +52,7 @@ class BlobApiDeleteTest extends BlobApiTestBase
 
         try {
             $this->blobApi->deleteFileByIdentifier('1234');
-        } catch (Error $e) {
+        } catch (BlobApiError $e) {
             $jsonData = json_decode($e->getMessage(), true);
             $this->assertEquals('blob-library:delete-file-failed', $jsonData['errorId']);
 
@@ -72,7 +72,7 @@ class BlobApiDeleteTest extends BlobApiTestBase
 
         try {
             $this->blobApi->deleteFilesByPrefix('my-prefix');
-        } catch (Error $e) {
+        } catch (BlobApiError $e) {
             $this->fail('Unexpected exception thrown!');
         }
 
@@ -87,7 +87,7 @@ class BlobApiDeleteTest extends BlobApiTestBase
 
         try {
             $this->blobApi->deleteFilesByPrefix('my-prefix');
-        } catch (Error $e) {
+        } catch (BlobApiError $e) {
             $jsonData = json_decode($e->getMessage(), true);
             $this->assertEquals('blob-library:delete-files-timeout', $jsonData['errorId']);
 
@@ -104,7 +104,7 @@ class BlobApiDeleteTest extends BlobApiTestBase
 
         try {
             $this->blobApi->deleteFilesByPrefix('my-prefix');
-        } catch (Error $e) {
+        } catch (BlobApiError $e) {
             $jsonData = json_decode($e->getMessage(), true);
             $this->assertEquals('blob-library:delete-files-failed', $jsonData['errorId']);
 

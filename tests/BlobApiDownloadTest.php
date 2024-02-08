@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\BlobLibrary\Tests;
 
-use Dbp\Relay\BlobLibrary\Helpers\Error;
+use Dbp\Relay\BlobLibrary\Api\BlobApiError;
 use GuzzleHttp\Psr7\Response;
 
 class BlobApiDownloadTest extends BlobApiTestBase
@@ -17,7 +17,7 @@ class BlobApiDownloadTest extends BlobApiTestBase
 
         try {
             $this->blobApi->downloadFileAsContentUrlByIdentifier('1234');
-        } catch (Error $e) {
+        } catch (BlobApiError $e) {
             $jsonData = json_decode($e->getMessage(), true);
 //            $this->assertEquals('File could not be downloaded from Blob!', $jsonData['message']);
             $this->assertEquals('blob-library:download-file-not-found', $jsonData['errorId']);
@@ -36,7 +36,7 @@ class BlobApiDownloadTest extends BlobApiTestBase
 
         try {
             $this->blobApi->downloadFileAsContentUrlByIdentifier('1234');
-        } catch (Error $e) {
+        } catch (BlobApiError $e) {
             $jsonData = json_decode($e->getMessage(), true);
             $this->assertEquals('blob-library:download-file-timeout', $jsonData['errorId']);
 
@@ -53,7 +53,7 @@ class BlobApiDownloadTest extends BlobApiTestBase
 
         try {
             $contentUrl = $this->blobApi->downloadFileAsContentUrlByIdentifier('1234');
-        } catch (Error $e) {
+        } catch (BlobApiError $e) {
             $this->fail('Unexpected exception thrown!');
         }
 

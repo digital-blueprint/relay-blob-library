@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Dbp\Relay\BlobLibrary\Helpers;
+namespace Dbp\Relay\BlobLibrary\Api;
 
-class Error extends \Exception
+class BlobApiError extends \Exception
 {
     private const WITH_DETAILS_STATUS = -1;
 
@@ -30,7 +30,7 @@ class Error extends \Exception
         parent::__construct(json_encode($decoded), $code, $previous);
     }
 
-    public static function withDetails(?string $message = '', string $errorId = '', array $errorDetails = [], int $code = 0): Error
+    public static function withDetails(?string $message = '', string $errorId = '', array $errorDetails = [], int $code = 0): BlobApiError
     {
         $message = [
             'code' => $code,
@@ -39,7 +39,7 @@ class Error extends \Exception
             'errorId' => $errorId,
         ];
 
-        return new Error(json_encode($message), self::WITH_DETAILS_STATUS);
+        return new BlobApiError(json_encode($message), self::WITH_DETAILS_STATUS);
     }
 
     /**

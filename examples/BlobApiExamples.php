@@ -4,7 +4,7 @@ declare(strict_types=1);
 // require autoload of the correct directory
 require __DIR__.'/../vendor/autoload.php';
 use Dbp\Relay\BlobLibrary\Api\BlobApi;
-use Dbp\Relay\BlobLibrary\Helpers\Error;
+use Dbp\Relay\BlobLibrary\Api\BlobApiError;
 
 // default parameters for blobApi
 $blobBaseUrl = 'http://127.0.0.1:8000';
@@ -24,17 +24,17 @@ $fileName = 'myFile.txt';
 // try to upload file, if successful it will return the blob id of the resource
 try {
     $id = $blobApi->uploadFile($prefix, $fileName, file_get_contents('myFile.txt'));
-} catch (Error $e) {
+} catch (BlobApiError $e) {
     echo $e->getMessage()."\n";
-    throw Error::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
+    throw BlobApiError::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
 }
 
 // try to download file using the given blob id
 try {
     $content = $blobApi->downloadFileAsContentUrlByIdentifier($id);
-} catch (Error $e) {
+} catch (BlobApiError $e) {
     echo $e->getMessage()."\n";
-    throw Error::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
+    throw BlobApiError::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
 }
 
 // strip base64 prefix with file information from real b64 content, and decode it
@@ -48,17 +48,17 @@ $additionalMetadata = '{"some-key": "some-value"}';
 // try to upload file with additional metadata, if successful it will return the blob id of the resource
 try {
     $id = $blobApi->uploadFile($prefix, $fileName, file_get_contents('myFile.txt'), $additionalMetadata);
-} catch (Error $e) {
+} catch (BlobApiError $e) {
     echo $e->getMessage()."\n";
-    throw Error::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
+    throw BlobApiError::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
 }
 
 // try to download file using the given blob id
 try {
     $content = $blobApi->getFileDataByIdentifier($id, 1);
-} catch (Error $e) {
+} catch (BlobApiError $e) {
     echo $e->getMessage()."\n";
-    throw Error::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
+    throw BlobApiError::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
 }
 // print response as json
 echo json_encode($content)."\n";
@@ -66,9 +66,9 @@ echo json_encode($content)."\n";
 // try to download file using the given blob id
 try {
     $content = $blobApi->getFileDataByPrefix($prefix, 1);
-} catch (Error $e) {
+} catch (BlobApiError $e) {
     echo $e->getMessage()."\n";
-    throw Error::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
+    throw BlobApiError::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
 }
 
 // print response as json
@@ -83,7 +83,7 @@ try {
     $content = $blobApi->getFileDataByIdentifier($id, 1);
     // print response as json
     echo json_encode($content)."\n";
-} catch (Error $e) {
+} catch (BlobApiError $e) {
     echo $e->getMessage()."\n";
-    throw Error::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
+    throw BlobApiError::withDetails('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
 }

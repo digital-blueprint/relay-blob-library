@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\BlobLibrary\Tests;
 
-use Dbp\Relay\BlobLibrary\Helpers\Error;
+use Dbp\Relay\BlobLibrary\Api\BlobApiError;
 use GuzzleHttp\Psr7\Response;
 
 class BlobApiUploadTest extends BlobApiTestBase
@@ -18,7 +18,7 @@ class BlobApiUploadTest extends BlobApiTestBase
         try {
             $this->blobApi->uploadFile('prefix', 'test.txt', 'data');
             $this->fail('Expected exception not thrown!');
-        } catch (Error $e) {
+        } catch (BlobApiError $e) {
             $jsonData = json_decode($e->getMessage(), true);
             $errorDetails = $jsonData['errorDetails'];
             $this->assertEquals('File could not be uploaded to Blob!', $jsonData['message']);
@@ -37,7 +37,7 @@ class BlobApiUploadTest extends BlobApiTestBase
 
         try {
             $this->blobApi->uploadFile('prefix', 'test.txt', 'data');
-        } catch (Error $e) {
+        } catch (BlobApiError $e) {
             $jsonData = json_decode($e->getMessage(), true);
             $this->assertEquals('blob-library:upload-file-timeout', $jsonData['errorId']);
         }
@@ -51,7 +51,7 @@ class BlobApiUploadTest extends BlobApiTestBase
 
         try {
             $this->blobApi->uploadFile('prefix', 'test.txt', 'data');
-        } catch (Error $e) {
+        } catch (BlobApiError $e) {
             $jsonData = json_decode($e->getMessage(), true);
             $this->assertEquals('blob-library:upload-file-not-saved', $jsonData['errorId']);
         }
@@ -65,7 +65,7 @@ class BlobApiUploadTest extends BlobApiTestBase
 
         try {
             $this->blobApi->uploadFile('prefix', 'test.txt', 'data');
-        } catch (Error $e) {
+        } catch (BlobApiError $e) {
             $jsonData = json_decode($e->getMessage(), true);
             $this->assertEquals('blob-library:upload-file-bucket-quota-reached', $jsonData['errorId']);
         }
@@ -79,7 +79,7 @@ class BlobApiUploadTest extends BlobApiTestBase
 
         try {
             $identifier = $this->blobApi->uploadFile('prefix', 'test.txt', 'data');
-        } catch (Error $e) {
+        } catch (BlobApiError $e) {
             $this->fail('Unexpected exception thrown!');
         }
 

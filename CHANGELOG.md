@@ -1,7 +1,7 @@
 # Changelog
 
 ## 0.1.10
-- Add support for `relay:errorId` in `\Dbp\Relay\BlobLibrary\Helpers\Error::decodeErrorId`
+- Add support for `relay:errorId` in `\Dbp\Relay\BlobLibrary\Api\BlobApiError::decodeErrorId`
 
 ## 0.1.9
 - Add function putFileByIdentifier to allow PUT requests to blob
