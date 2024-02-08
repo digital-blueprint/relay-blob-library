@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\BlobLibrary\Helpers;
 
+use Dbp\Relay\BlobLibrary\Api\BlobApiError;
 use Jose\Component\Core\AlgorithmManager;
 use Jose\Component\Core\JWK;
 use Jose\Component\KeyManagement\JWKFactory;
@@ -76,7 +77,7 @@ class SignatureTools
      * @param string $token   the JWS token as string
      * @param array  $payload to extract from token on success
      *
-     * @throws Error
+     * @throws BlobApiError
      */
     public static function verifyToken(JWK $jwk, string $token, array &$payload): bool
     {
@@ -89,7 +90,7 @@ class SignatureTools
             try {
                 $payload = json_decode($jws->getPayload(), true, 512, JSON_THROW_ON_ERROR);
             } catch (\JsonException $e) {
-                throw Error::withDetails('Payload could not be decoded!', 'blob-library:json-exception', ['message' => $e->getMessage()]);
+                throw BlobApiError::withDetails('Payload could not be decoded!', 'blob-library:json-exception', ['message' => $e->getMessage()]);
             }
         }
 //        $ok = $jwsVerifier->verifyWithKey($jws, $jwk, 0);
@@ -106,7 +107,7 @@ class SignatureTools
      *
      * @return array extracted payload from token
      *
-     * @throws Error
+     * @throws BlobApiError
      */
     public static function verify(string $secret, string $token): array
     {
@@ -116,7 +117,7 @@ class SignatureTools
         if (!SignatureTools::verifyToken($jwk, $token, $payload)) {
             /* @noinspection ForgottenDebugOutputInspection */
             //dump(['token' => $token, 'payload' => $payload, 'secret' => $secret]);
-            throw Error::withDetails('Invalid signature', 'blob-library:invalid-signature');
+            throw BlobApiError::withDetails('Invalid signature', 'blob-library:invalid-signature');
         }
 
         return $payload;
