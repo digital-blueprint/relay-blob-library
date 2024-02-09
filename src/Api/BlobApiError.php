@@ -57,18 +57,8 @@ class BlobApiError extends \Exception
         return $this->errorId;
     }
 
-    public function setErrorId(string $errorId): void
-    {
-        $this->errorId = $errorId;
-    }
-
     public function getErrorDetails(): array
     {
         return $this->errorDetails;
-    }
-
-    public function setErrorDetails(array $errorDetails): void
-    {
-        $this->errorDetails = $errorDetails;
     }
 }
