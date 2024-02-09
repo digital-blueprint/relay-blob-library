@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0
+- There error handling has been improved
+  - New error class `Dbp\Relay\BlobLibrary\Api\BlobApiError` with `getMessage`, `getErrorId` and `getErrorDetails` methods
+  - There are constants for all error codes
+
 ## 0.1.10
 - Add support for `relay:errorId` in `\Dbp\Relay\BlobLibrary\Api\BlobApiError::decodeErrorId`
 
