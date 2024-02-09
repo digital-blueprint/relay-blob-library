@@ -38,7 +38,10 @@ $fileData = 'my-binary-file-data';
 try {
     $identifier = $blobApi->uploadFile($prefix, $fileName, $fileData);
 } catch (BlobApiError $e) {
-    // Handle error, print $e->getMessage() for more information
+    // Handle error
+    var_dump($e->getMessage());
+    var_dump($e->getErrorId());
+    var_dump($e->getErrorDetails());
 }
 
 // Download a file from the blob storage by identifier and get the content url
