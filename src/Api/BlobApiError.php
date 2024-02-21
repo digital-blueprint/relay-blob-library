@@ -44,7 +44,7 @@ class BlobApiError extends \Exception
     private $errorId = '';
     private $errorDetails = [];
 
-    public function __construct(string $message = '', string $errorId = '', array $errorDetails = [], int $code = 0, \Throwable $previous = null)
+    public function __construct(string $message = '', string $errorId = '', array $errorDetails = [], int $code = 0, ?\Throwable $previous = null)
     {
         $this->errorId = $errorId;
         $this->errorDetails = $errorDetails;

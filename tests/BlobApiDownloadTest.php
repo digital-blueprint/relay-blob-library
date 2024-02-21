@@ -18,7 +18,7 @@ class BlobApiDownloadTest extends BlobApiTestBase
         try {
             $this->blobApi->downloadFileAsContentUrlByIdentifier('1234');
         } catch (BlobApiError $e) {
-//            $this->assertEquals('File could not be downloaded from Blob!', $e->getMessage());
+            //            $this->assertEquals('File could not be downloaded from Blob!', $e->getMessage());
             $this->assertEquals(BlobApiError::ERROR_ID_DOWNLOAD_FILE_NOT_FOUND, $e->getErrorId());
             $this->assertEquals('File was not found!', $e->getMessage());
 

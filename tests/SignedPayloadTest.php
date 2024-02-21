@@ -16,7 +16,7 @@ class SignedPayloadTest extends TestCase
             $secret = bin2hex(random_bytes(32));
             $bucketId = '9876';
             $creationTime = date('U');
-//            $uri = 'http://127.0.0.1:8000/blob/files/';
+            //            $uri = 'http://127.0.0.1:8000/blob/files/';
             $payload = [
                 'bucketID' => $bucketId,
                 'creationTime' => $creationTime,
@@ -41,7 +41,7 @@ class SignedPayloadTest extends TestCase
             $secret = bin2hex(random_bytes(32));
             $bucketId = '9876';
             $creationTime = date('U');
-//            $uri = 'http://127.0.0.1:8000/blob/files/';
+            //            $uri = 'http://127.0.0.1:8000/blob/files/';
             $payload = [
                 'bucketID' => $bucketId,
                 'creationTime' => $creationTime,
@@ -71,7 +71,7 @@ class SignedPayloadTest extends TestCase
             $secret = bin2hex(random_bytes(32));
             $bucketId = '9876';
             $creationTime = date('U');
-//            $uri = "http://127.0.0.1:8000/blob/files/?bucketID=$bucketId&prefix=$prefix&creationTime=$creationTime";
+            //            $uri = "http://127.0.0.1:8000/blob/files/?bucketID=$bucketId&prefix=$prefix&creationTime=$creationTime";
             $payload = [
                 'bucketID' => $bucketId,
                 'creationTime' => $creationTime,
