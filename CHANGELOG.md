@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+- Drop support for PHP 7.3
+
 ## 0.2.0
 - There error handling has been improved
   - New error class `Dbp\Relay\BlobLibrary\Api\BlobApiError` with `getMessage`, `getErrorId` and `getErrorDetails` methods
