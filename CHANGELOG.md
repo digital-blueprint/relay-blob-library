@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2
+
+- Drop support for PHP 7.4/8.0
+
 ## 0.2.1
 
 - Drop support for PHP 7.3
