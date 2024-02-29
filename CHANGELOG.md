@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.3
+
+- Port from web-token/jwt-core 2.0 to web-token/jwt-library 3.3
+
 ## 0.2.2
 
 - Drop support for PHP 7.4/8.0
