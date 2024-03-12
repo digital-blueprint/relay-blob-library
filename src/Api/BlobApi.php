@@ -45,6 +45,22 @@ class BlobApi
         $this->client = $client;
     }
 
+    public function getOAuth2Token($keycloakUrl, $realm, $clientID, $clientSecret)
+    {
+        // Fetch a token
+        $tokenUrl = "$keycloakUrl/realms/$realm/protocol/openid-connect/token";
+        $client = new Client();
+        $response = $client->post(
+            $tokenUrl, [
+            'auth' => [$clientID, $clientSecret],
+            'form_params' => ['grant_type' => 'client_credentials'],
+        ]);
+        $data = (string) $response->getBody();
+        $json = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
+
+        return $json['access_token'];
+    }
+
     /**
      * @throws BlobApiError
      */
