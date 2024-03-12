@@ -35,7 +35,9 @@ class BlobApi
     {
         $this->blobBaseUrl = $blobBaseUrl;
         $this->blobKey = $blobKey;
-        $this->blobBucketId = $blobBucketId;
+
+        // $blobBucketId should be not encoded previously!
+        $this->blobBucketId = rawurlencode($blobBucketId);
 
         $this->client = new Client();
     }
@@ -80,7 +82,7 @@ class BlobApi
     {
         $queryParams = [
             'bucketID' => $this->blobBucketId,
-            'creationTime' => date('U'),
+            'creationTime' => rawurlencode(date('c')),
             'method' => 'DELETE',
         ];
 
@@ -128,7 +130,7 @@ class BlobApi
     {
         $queryParams = [
             'bucketID' => $this->blobBucketId,
-            'creationTime' => date('U'),
+            'creationTime' => rawurlencode(date('c')),
             'prefix' => $prefix,
             'method' => 'DELETE',
         ];
@@ -192,7 +194,7 @@ class BlobApi
     {
         $queryParams = [
             'bucketID' => $this->blobBucketId,
-            'creationTime' => date('U'),
+            'creationTime' => rawurlencode(date('c')),
             'method' => 'GET',
             'includeData' => $includeData,
         ];
@@ -242,7 +244,7 @@ class BlobApi
     {
         $queryParams = [
             'bucketID' => $this->blobBucketId,
-            'creationTime' => date('U'),
+            'creationTime' => rawurlencode(date('c')),
             'prefix' => $prefix,
             'method' => 'GET',
             'includeData' => $includeData,
@@ -296,7 +298,7 @@ class BlobApi
     {
         $queryParams = [
             'bucketID' => $this->blobBucketId,
-            'creationTime' => date('U'),
+            'creationTime' => rawurlencode(date('c')),
             'method' => 'GET',
             'includeData' => 1,
         ];
@@ -365,11 +367,9 @@ class BlobApi
     {
         $queryParams = [
             'bucketID' => $this->blobBucketId,
-            'creationTime' => date('U'),
+            'creationTime' => rawurlencode(date('c')),
             'prefix' => $prefix,
             'method' => 'POST',
-            'fileName' => $fileName,
-            'fileHash' => SignatureTools::generateSha256Checksum($fileData),
         ];
 
         $url = $this->getSignedBlobFilesUrlWithBody($queryParams, $additionalMetadata, $additionalType);
@@ -384,20 +384,23 @@ class BlobApi
                         'contents' => $fileData,
                         'filename' => $fileName,
                     ],
+                    [
+                        'name' => 'fileName',
+                        'contents' => $fileName,
+                    ],
+                    [
+                        'name' => 'fileHash',
+                        'contents' => SignatureTools::generateSha256Checksum($fileData),
+                    ],
                 ],
             ];
             if ($additionalType) {
-                array_push($options['multipart'],
-                    [
-                        'name' => 'additionalMetadata',
-                        'contents' => $additionalMetadata,
-                    ],
-                    [
-                        'name' => 'additionalType',
-                        'contents' => $additionalType,
-                    ]
-                );
-            } elseif ($additionalMetadata) {
+                $options['multipart'][] = [
+                    'name' => 'additionalMetadata',
+                    'contents' => $additionalMetadata,
+                ];
+            }
+            if ($additionalMetadata) {
                 $options['multipart'][] = [
                     'name' => 'additionalMetadata',
                     'contents' => $additionalMetadata,
@@ -461,40 +464,61 @@ class BlobApi
      *
      * @throws BlobApiError if the file update fails
      */
-    public function putFileByIdentifier(string $identifier, string $fileName = '', string $additionalMetadata = '', string $additionalType = ''): string
+    public function putFileByIdentifier(string $identifier, string $fileName = '', string $additionalMetadata = '', string $additionalType = '', string $fileData = ''): string
     {
         $queryParams = [
             'bucketID' => $this->blobBucketId,
-            'creationTime' => date('U'),
-            'method' => 'PUT',
+            'creationTime' => rawurlencode(date('c')),
+            'method' => 'PATCH',
         ];
 
         $url = $this->getSignedBlobFilesUrlWithBody($queryParams, $additionalMetadata, $additionalType, $fileName, $identifier);
 
-        // set fileName, addMetaData and addType of body to json encode later
-        $body = [];
-        if ($fileName) {
-            $body['fileName'] = $fileName;
-        }
-        if ($additionalMetadata) {
-            $body['additionalMetadata'] = $additionalMetadata;
-        }
-        if ($additionalType) {
-            $body['additionalType'] = $additionalType;
+        // set fileName, addMetaData and addType of body
+        $options = [];
+
+        if ($fileData) {
+            $options['multipart'][] = [
+                [
+                'name' => 'file',
+                'contents' => $fileData,
+                'filename' => $fileName,
+                ],
+                [
+                    'name' => 'fileHash',
+                    'contents' => SignatureTools::generateSha256Checksum($fileData),
+                ],
+            ];
         }
 
-        // PUT to Blob
+        if ($fileName) {
+            $options['multipart'][] = [
+                'name' => 'fileName',
+                'contents' => $fileName,
+            ];
+        }
+        if ($additionalType) {
+            $options['multipart'][] = [
+                'name' => 'additionalMetadata',
+                'contents' => $additionalMetadata,
+            ];
+        }
+        if ($additionalMetadata) {
+            $options['multipart'][] = [
+                'name' => 'additionalMetadata',
+                'contents' => $additionalMetadata,
+            ];
+        }
+
+        // PATCH to Blob
         // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
         try {
-            $options = [
-                'headers' => [
+            $options['headers'][] = [
                     'Accept' => 'application/ld+json',
                     'HTTP_ACCEPT' => 'application/ld+json',
                     'Content-Type' => 'application/json',
-                ],
-                'body' => json_encode($body),
             ];
-            $r = $this->client->request('PUT', $url, $options);
+            $r = $this->client->request('PATCH', $url, $options);
         } catch (\Exception $e) {
             // Handle ClientExceptions (403) and ServerException (500)
             // GuzzleExceptions will be caught by the general Exception handler
