@@ -496,9 +496,9 @@ class BlobApi
         if ($fileData) {
             $options['multipart'][] = [
                 [
-                'name' => 'file',
-                'contents' => $fileData,
-                'filename' => $fileName,
+                    'name' => 'file',
+                    'contents' => $fileData,
+                    'filename' => $fileName,
                 ],
                 [
                     'name' => 'fileHash',
