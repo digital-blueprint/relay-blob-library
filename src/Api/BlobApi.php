@@ -8,7 +8,9 @@ use Dbp\Relay\BlobLibrary\Helpers\SignatureTools;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Exception\ServerException;
+use Psr\Http\Message\ResponseInterface;
 
 class BlobApi
 {
@@ -31,6 +33,11 @@ class BlobApi
      */
     private $client;
 
+    /**
+     * @var string
+     */
+    private $token;
+
     public function __construct(string $blobBaseUrl, string $blobBucketId, $blobKey)
     {
         $this->blobBaseUrl = $blobBaseUrl;
@@ -40,6 +47,9 @@ class BlobApi
         $this->blobBucketId = rawurlencode($blobBucketId);
 
         $this->client = new Client();
+
+        // empty keycloak token by default
+        $this->token = '';
     }
 
     public function setClient(Client $client): void
@@ -47,7 +57,11 @@ class BlobApi
         $this->client = $client;
     }
 
-    public function getOAuth2Token($keycloakUrl, $realm, $clientID, $clientSecret)
+    /**
+     * @throws GuzzleException
+     * @throws \JsonException
+     */
+    public function getAndSetOAuth2Token($keycloakUrl, $realm, $clientID, $clientSecret)
     {
         // Fetch a token
         $tokenUrl = "$keycloakUrl/realms/$realm/protocol/openid-connect/token";
@@ -59,6 +73,8 @@ class BlobApi
         ]);
         $data = (string) $response->getBody();
         $json = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
+
+        $this->token = $json['access_token'];
 
         return $json['access_token'];
     }
@@ -90,7 +106,7 @@ class BlobApi
 
         // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
         try {
-            $r = $this->client->request('DELETE', $url);
+            $r = $this->request('DELETE', $url);
         } catch (\Exception $e) {
             // Handle ClientExceptions. GuzzleExceptions will be caught by the general Exception handler
             if ($e instanceof ClientException && $e->hasResponse()) {
@@ -141,7 +157,7 @@ class BlobApi
         // We send a DELETE request to the blob service to delete all files with the given prefix,
         // regardless if we have files in dispatch or not, we just want to make sure that the blob files are deleted
         try {
-            $r = $this->client->request('DELETE', $url);
+            $r = $this->request('DELETE', $url);
         } catch (\Exception $e) {
             // Handle ClientExceptions. GuzzleExceptions will be caught by the general Exception handler
             if ($e instanceof ClientException && $e->hasResponse()) {
@@ -203,7 +219,7 @@ class BlobApi
 
         // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
         try {
-            $r = $this->client->request('GET', $url);
+            $r = $this->request('GET', $url);
         } catch (\Exception $e) {
             // Handle ClientExceptions. GuzzleExceptions will be caught by the general Exception handler
             if ($e instanceof ClientException && $e->hasResponse()) {
@@ -254,7 +270,7 @@ class BlobApi
 
         // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
         try {
-            $r = $this->client->request('GET', $url);
+            $r = $this->request('GET', $url);
         } catch (\Exception $e) {
             // Handle ClientExceptions. GuzzleExceptions will be caught by the general Exception handler
             if ($e instanceof ClientException && $e->hasResponse()) {
@@ -307,7 +323,7 @@ class BlobApi
 
         // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
         try {
-            $r = $this->client->request('GET', $url);
+            $r = $this->request('GET', $url);
         } catch (\Exception $e) {
             // Handle ClientExceptions. GuzzleExceptions will be caught by the general Exception handler
             if ($e instanceof ClientException && $e->hasResponse()) {
@@ -406,7 +422,7 @@ class BlobApi
                     'contents' => $additionalMetadata,
                 ];
             }
-            $r = $this->client->request('POST', $url, $options);
+            $r = $this->request('POST', $url, $options);
         } catch (\Exception $e) {
             // Handle ClientExceptions (403) and ServerException (500)
             // GuzzleExceptions will be caught by the general Exception handler
@@ -518,7 +534,7 @@ class BlobApi
                     'HTTP_ACCEPT' => 'application/ld+json',
                     'Content-Type' => 'application/json',
             ];
-            $r = $this->client->request('PATCH', $url, $options);
+            $r = $this->request('PATCH', $url, $options);
         } catch (\Exception $e) {
             // Handle ClientExceptions (403) and ServerException (500)
             // GuzzleExceptions will be caught by the general Exception handler
@@ -643,6 +659,20 @@ class BlobApi
         $token = $this->createBlobSignature($payload);
 
         return $this->blobBaseUrl.$urlPart.'&sig='.$token;
+    }
+
+    /**
+     * @throws GuzzleException
+     */
+    private function request(string $method, $uri = '', array $options = []): ResponseInterface
+    {
+        if ($this->token) {
+            $options['headers'][] = [
+                'Authorization' => "Bearer $this->token",
+            ];
+        }
+
+        return $this->client->request($method, $uri, $options);
     }
 
     /**
