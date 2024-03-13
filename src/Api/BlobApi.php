@@ -388,7 +388,7 @@ class BlobApi
             'method' => 'POST',
         ];
 
-        $url = $this->getSignedBlobFilesUrlWithBody($queryParams, $additionalMetadata, $additionalType);
+        $url = $this->getSignedBlobFilesUrlWithBody($queryParams, $additionalMetadata, $additionalType, $fileName, '', SignatureTools::generateSha256Checksum($fileData));
 
         // Post to Blob
         // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
@@ -623,7 +623,7 @@ class BlobApi
     /**
      * @throws BlobApiError
      */
-    protected function getSignedBlobFilesUrlWithBody(array $queryParams, string $additionalMetadata = '', string $additionalType = '', string $filename = '', string $identifier = ''): string
+    protected function getSignedBlobFilesUrlWithBody(array $queryParams, string $additionalMetadata = '', string $additionalType = '', string $filename = '', string $identifier = '', string $filehash = ''): string
     {
         $path = '/blob/files';
 
@@ -638,6 +638,9 @@ class BlobApi
 
         if ($filename) {
             $body['fileName'] = $filename;
+        }
+        if ($filehash) {
+            $body['fileHash'] = $filehash;
         }
         if ($additionalMetadata) {
             $body['additionalMetadata'] = $additionalMetadata;
@@ -667,9 +670,7 @@ class BlobApi
     private function request(string $method, $uri = '', array $options = []): ResponseInterface
     {
         if ($this->token) {
-            $options['headers'][] = [
-                'Authorization' => "Bearer $this->token",
-            ];
+            $options['headers']['Authorization'] = "Bearer $this->token";
         }
 
         return $this->client->request($method, $uri, $options);
