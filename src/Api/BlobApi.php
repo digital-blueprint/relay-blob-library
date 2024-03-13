@@ -412,8 +412,8 @@ class BlobApi
             ];
             if ($additionalType) {
                 $options['multipart'][] = [
-                    'name' => 'additionalMetadata',
-                    'contents' => $additionalMetadata,
+                    'name' => 'additionalType',
+                    'contents' => $additionalType,
                 ];
             }
             if ($additionalMetadata) {
@@ -515,8 +515,8 @@ class BlobApi
         }
         if ($additionalType) {
             $options['multipart'][] = [
-                'name' => 'additionalMetadata',
-                'contents' => $additionalMetadata,
+                'name' => 'additionalType',
+                'contents' => $additionalType,
             ];
         }
         if ($additionalMetadata) {
