@@ -8,7 +8,7 @@ use Dbp\Relay\BlobLibrary\Api\BlobApiError;
 
 // default parameters for blobApi
 $blobBaseUrl = 'http://127.0.0.1:8000';
-$blobBucketId = '1234';
+$blobBucketId = 'test-bucket';
 $blobKey = '';
 
 // generate blobApi instance
@@ -19,6 +19,24 @@ $bucketID = $blobBucketId;
 $prefix = 'myData';
 $fileName = 'myFile.txt';
 
+// keycloak specific variables
+// replace with your own keycloak config
+$keycloakUrl = '';
+$realm = '';
+$clientID = '';
+$clientSecret = '';
+
+// get OAuth2 token
+try {
+    $token = $blobApi->getAndSetOAuth2Token($keycloakUrl, $realm, $clientID, $clientSecret);
+} catch (JsonException $e) {
+    echo $e->getMessage()."\n";
+    throw new BlobApiError('Something went wrong while decoding the json!', 'blob-library-example:get-token-json-error', ['message' => $e->getMessage()]);
+} catch (\GuzzleHttp\Exception\GuzzleException $e) {
+    echo $e->getMessage()."\n";
+    throw new BlobApiError('Something went wrong in the request!', 'blob-library-example:get-token-request-error', ['message' => $e->getMessage()]);
+}
+
 // without additional metadata
 
 // try to upload file, if successful it will return the blob id of the resource
@@ -28,6 +46,7 @@ try {
     echo $e->getMessage()."\n";
     throw new BlobApiError('Something went wrong!', 'blob-library-example:upload-file-error', ['message' => $e->getMessage()]);
 }
+echo $id."\n";
 
 // try to download file using the given blob id
 try {
