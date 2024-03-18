@@ -32,7 +32,7 @@ try {
 } catch (JsonException $e) {
     echo $e->getMessage()."\n";
     throw new BlobApiError('Something went wrong while decoding the json!', 'blob-library-example:get-token-json-error', ['message' => $e->getMessage()]);
-} catch (\GuzzleHttp\Exception\GuzzleException $e) {
+} catch (GuzzleHttp\Exception\GuzzleException $e) {
     echo $e->getMessage()."\n";
     throw new BlobApiError('Something went wrong in the request!', 'blob-library-example:get-token-request-error', ['message' => $e->getMessage()]);
 }
