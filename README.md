@@ -34,6 +34,22 @@ $prefix = 'my-prefix';
 $fileName = 'my-file-name.pdf';
 $fileData = 'my-binary-file-data';
 
+// oauth specific variables
+// replace with your own config
+
+$oauthIDPUrl = 'https://your.oauth.server'; // oauthIDP url including realm
+$clientID = 'your-client-id';
+$clientSecret = 'your-client-secret';
+
+// if needed, get an OAuth2 token
+try {
+    $blobApi->setOAuth2Token($oauthIDPUrl, $clientID, $clientSecret);
+} catch (JsonException $e) {
+    // Handle error, print $e->getMessage() for more information
+} catch (GuzzleHttp\Exception\GuzzleException $e) {
+    // Handle error, print $e->getMessage() for more information
+}
+
 // Upload a file to the blob storage and get the identifier
 try {
     $identifier = $blobApi->uploadFile($prefix, $fileName, $fileData);
