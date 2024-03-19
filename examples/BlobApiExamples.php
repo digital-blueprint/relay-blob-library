@@ -11,24 +11,24 @@ $blobBaseUrl = 'http://127.0.0.1:8000';
 $blobBucketId = 'test-bucket';
 $blobKey = '';
 
-// generate blobApi instance
-$blobApi = new BlobApi($blobBaseUrl, $blobBucketId, $blobKey);
-
 // define bucketID, prefix and filename
 $bucketID = $blobBucketId;
 $prefix = 'myData';
 $fileName = 'myFile.txt';
 
-// keycloak specific variables
-// replace with your own keycloak config
-$keycloakUrl = '';
-$realm = '';
+// oauth specific variables
+// replace with your own config
+
+$oauthIDPUrl = ''; // oauthIDP url including realm
 $clientID = '';
 $clientSecret = '';
 
+// generate blobApi instance
+$blobApi = new BlobApi($blobBaseUrl, $blobBucketId, $blobKey);
+
 // get OAuth2 token
 try {
-    $token = $blobApi->getAndSetOAuth2Token($keycloakUrl, $realm, $clientID, $clientSecret);
+    $blobApi->setOAuth2Token($oauthIDPUrl, $clientID, $clientSecret);
 } catch (JsonException $e) {
     echo $e->getMessage()."\n";
     throw new BlobApiError('Something went wrong while decoding the json!', 'blob-library-example:get-token-json-error', ['message' => $e->getMessage()]);
