@@ -38,7 +38,32 @@ class BlobApi
      */
     private $token;
 
-    public function __construct(string $blobBaseUrl, string $blobBucketId, $blobKey)
+    /**
+     * @var int
+     */
+    private $tokenExpires;
+
+    /**
+     * @var array
+     */
+    private $config;
+
+    /**
+     * @var string
+     */
+    private $oauthIDPUrl;
+
+    /**
+     * @var string
+     */
+    private $clientID;
+
+    /**
+     * @var string
+     */
+    private $clientSecret;
+
+    public function __construct(string $blobBaseUrl, string $blobBucketId, string $blobKey)
     {
         $this->blobBaseUrl = $blobBaseUrl;
         $this->blobKey = $blobKey;
@@ -48,7 +73,7 @@ class BlobApi
 
         $this->client = new Client();
 
-        // empty keycloak token by default
+        // empty oauth token by default
         $this->token = '';
     }
 
@@ -61,11 +86,19 @@ class BlobApi
      * @throws GuzzleException
      * @throws \JsonException
      */
-    public function getAndSetOAuth2Token($keycloakUrl, $realm, $clientID, $clientSecret)
+    public function setOAuth2Token($oauthIDPUrl, $clientID, $clientSecret): void
     {
-        // Fetch a token
-        $tokenUrl = "$keycloakUrl/realms/$realm/protocol/openid-connect/token";
+        $this->oauthIDPUrl = $oauthIDPUrl;
+        $this->clientID = $clientID;
+        $this->clientSecret = $clientSecret;
+
         $client = new Client();
+        $configUrl = $oauthIDPUrl.'/.well-known/openid-configuration';
+        $configBody = (string) $client->get($configUrl)->getBody();
+        $this->config = json_decode($configBody, true, 512, JSON_THROW_ON_ERROR);
+
+        // Fetch a token
+        $tokenUrl = $this->config['token_endpoint'];
         $response = $client->post(
             $tokenUrl, [
             'auth' => [$clientID, $clientSecret],
@@ -75,8 +108,7 @@ class BlobApi
         $json = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
 
         $this->token = $json['access_token'];
-
-        return $json['access_token'];
+        $this->tokenExpires = time() + ($json['expires_in'] - 20);
     }
 
     /**
@@ -666,9 +698,14 @@ class BlobApi
 
     /**
      * @throws GuzzleException
+     * @throws \JsonException
      */
     private function request(string $method, $uri = '', array $options = []): ResponseInterface
     {
+        // refresh token if already expired
+        if ($this->token !== '' && time() > $this->tokenExpires) {
+            $this->setOAuth2Token($this->oauthIDPUrl, $this->clientID, $this->clientSecret);
+        }
         if ($this->token) {
             $options['headers']['Authorization'] = "Bearer $this->token";
         }
