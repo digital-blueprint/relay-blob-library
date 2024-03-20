@@ -11,9 +11,9 @@
 
 ### BlobApi::patchFileByIdentifier
 
-| errorId                                      | Description                                                                                     |
-|----------------------------------------------|-------------------------------------------------------------------------------------------------|
-| `blob-library:patch-file-failed`             | The upload of the file failed                                                                   |
+| errorId                                        | Description                                                                                     |
+|------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| `blob-library:patch-file-failed`               | The upload of the file failed                                                                   |
 | `blob-library:patch-file-timeout`              | The request is too old and timed out! Please try again.                                         |
 | `blob-library:patch-file-method-not-suitable`  | The given method in url is not the same as the used method! Please try again.                   |
 | `blob-library:patch-file-bucket-quota-reached` | The bucket quota of the given bucket is reached! Please try again or contact your bucket owner. |
