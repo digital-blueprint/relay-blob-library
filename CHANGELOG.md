@@ -1,7 +1,7 @@
 # Changelog
 ## 0.2.4 
 - Adapt library for changes with blob version v0.1.20
-  - Change PUT to PATCH and the PATCH body to multipart/formdata
+  - Change everything from `PUT` to `PATCH`, and the `PATCH` body to `multipart/formdata`.
   - Change `creationTime` from timestamp to ISO 8601 string 
 - Implement support for OAuth2 tokens and token refresh
 
