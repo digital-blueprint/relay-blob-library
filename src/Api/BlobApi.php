@@ -512,7 +512,7 @@ class BlobApi
      *
      * @throws BlobApiError if the file update fails
      */
-    public function putFileByIdentifier(string $identifier, string $fileName = '', string $additionalMetadata = '', string $additionalType = '', string $fileData = ''): string
+    public function patchFileByIdentifier(string $identifier, string $fileName = '', string $additionalMetadata = '', string $additionalType = '', string $fileData = ''): string
     {
         $queryParams = [
             'bucketID' => $this->blobBucketId,
@@ -580,26 +580,26 @@ class BlobApi
                     case 403:
                         if ($errorId === 'blob:create-file-data-creation-time-too-old') {
                             // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
-                            throw new BlobApiError('Request too old and timed out! Please try again.', BlobApiError::ERROR_ID_PUT_FILE_TIMEOUT, ['message' => $e->getMessage()]);
+                            throw new BlobApiError('Request too old and timed out! Please try again.', BlobApiError::ERROR_ID_PATCH_FILE_TIMEOUT, ['message' => $e->getMessage()]);
                         }
                         $this->handleSignatureError($errorId, $e);
                         break;
 
                     case 405:
                         if ($errorId === 'blob:create-file-data-method-not-suitable') {
-                            throw new BlobApiError('The given method in url is not the same as the used method! Please try again.', BlobApiError::ERROR_ID_PUT_FILE_METHOD_NOT_SUITABLE, ['message' => $e->getMessage()]);
+                            throw new BlobApiError('The given method in url is not the same as the used method! Please try again.', BlobApiError::ERROR_ID_PATCH_FILE_METHOD_NOT_SUITABLE, ['message' => $e->getMessage()]);
                         }
                         break;
 
                     case 507:
                         if ($errorId === 'blob:create-file-data-bucket-quota-reached') {
-                            throw new BlobApiError('The bucket quota of the given bucket is reached! Please try again or contact your bucket owner.', BlobApiError::ERROR_ID_PUT_FILE_BUCKET_QUOTA_REACHED, ['message' => $e->getMessage()]);
+                            throw new BlobApiError('The bucket quota of the given bucket is reached! Please try again or contact your bucket owner.', BlobApiError::ERROR_ID_PATCH_FILE_BUCKET_QUOTA_REACHED, ['message' => $e->getMessage()]);
                         }
                         break;
                 }
             }
 
-            throw new BlobApiError('File could not be uploaded to Blob!', BlobApiError::ERROR_ID_PUT_FILE_FAILED, ['identifier' => $identifier, 'fileName' => $fileName, 'message' => $e->getMessage()]);
+            throw new BlobApiError('File could not be uploaded to Blob!', BlobApiError::ERROR_ID_PATCH_FILE_FAILED, ['identifier' => $identifier, 'fileName' => $fileName, 'message' => $e->getMessage()]);
         }
 
         $result = $r->getBody()->getContents();
@@ -607,7 +607,7 @@ class BlobApi
         $identifier = $jsonData['identifier'] ?? '';
 
         if ($identifier === '') {
-            throw new BlobApiError('File could not be uploaded to Blob!', BlobApiError::ERROR_ID_PUT_FILE_FAILED, ['identifier' => $identifier, 'fileName' => $fileName, 'message' => 'No identifier returned from Blob!']);
+            throw new BlobApiError('File could not be uploaded to Blob!', BlobApiError::ERROR_ID_PATCH_FILE_FAILED, ['identifier' => $identifier, 'fileName' => $fileName, 'message' => 'No identifier returned from Blob!']);
         }
 
         // Return the blob file ID

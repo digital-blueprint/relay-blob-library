@@ -12,8 +12,8 @@ class BlobApiError extends \Exception
     public const ERROR_ID_UPLOAD_FILE_NOT_SAVED = 'blob-library:upload-file-not-saved';
     public const ERROR_ID_UPLOAD_FILE_BUCKET_QUOTA_REACHED = 'blob-library:upload-file-bucket-quota-reached';
 
-    public const ERROR_ID_PUT_FILE_METHOD_NOT_SUITABLE = 'blob-library:put-file-method-not-suitable';
-    public const ERROR_ID_PUT_FILE_BUCKET_QUOTA_REACHED = 'blob-library:put-file-bucket-quota-reached';
+    public const ERROR_ID_PATCH_FILE_METHOD_NOT_SUITABLE = 'blob-library:patch-file-method-not-suitable';
+    public const ERROR_ID_PATCH_FILE_BUCKET_QUOTA_REACHED = 'blob-library:patch-file-bucket-quota-reached';
 
     // BlobApi::downloadFileAsContentUrlByIdentifier
     public const ERROR_ID_DOWNLOAD_FILE_NOT_FOUND = 'blob-library:download-file-not-found';
@@ -21,9 +21,9 @@ class BlobApiError extends \Exception
     public const ERROR_ID_DOWNLOAD_CONTENT_URL_EMPTY = 'blob-library:download-content-url-empty';
     public const ERROR_ID_DOWNLOAD_FILE_TIMEOUT = 'blob-library:download-file-timeout';
 
-    // BlobApi::putFileByIdentifier
-    public const ERROR_ID_PUT_FILE_FAILED = 'blob-library:put-file-failed';
-    public const ERROR_ID_PUT_FILE_TIMEOUT = 'blob-library:put-file-timeout';
+    // BlobApi::patchFileByIdentifier
+    public const ERROR_ID_PATCH_FILE_FAILED = 'blob-library:patch-file-failed';
+    public const ERROR_ID_PATCH_FILE_TIMEOUT = 'blob-library:patch-file-timeout';
 
     // BlobApi::deleteFileByIdentifier
     public const ERROR_ID_DELETE_FILE_FAILED = 'blob-library:delete-file-failed';

@@ -95,7 +95,7 @@ echo json_encode($content)."\n";
 
 // try to put file using the given blob id
 try {
-    $content = $blobApi->putFileByIdentifier($id, 'newFIleName.txt');
+    $content = $blobApi->patchFileByIdentifier($id, 'newFIleName.txt');
     // print response as json
     echo json_encode($content)."\n";
     // get file to see if filename changed
