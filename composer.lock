@@ -2034,16 +2034,16 @@
         },
         {
             "name": "web-token/jwt-library",
-            "version": "3.3.2",
+            "version": "3.3.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/web-token/jwt-library.git",
-                "reference": "3a377d6cda5c346e8f7f9c6823ff6e1059dde562"
+                "reference": "d8a14edb42fab6f172bddff469b200e816a7b074"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/web-token/jwt-library/zipball/3a377d6cda5c346e8f7f9c6823ff6e1059dde562",
-                "reference": "3a377d6cda5c346e8f7f9c6823ff6e1059dde562",
+                "url": "https://api.github.com/repos/web-token/jwt-library/zipball/d8a14edb42fab6f172bddff469b200e816a7b074",
+                "reference": "d8a14edb42fab6f172bddff469b200e816a7b074",
                 "shasum": ""
             },
             "require": {
@@ -2115,7 +2115,7 @@
             ],
             "support": {
                 "issues": "https://github.com/web-token/jwt-library/issues",
-                "source": "https://github.com/web-token/jwt-library/tree/3.3.2"
+                "source": "https://github.com/web-token/jwt-library/tree/3.3.3"
             },
             "funding": [
                 {
@@ -2127,7 +2127,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2024-03-22T12:17:02+00:00"
+            "time": "2024-03-23T18:02:49+00:00"
         }
     ],
     "packages-dev": [
