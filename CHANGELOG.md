@@ -1,4 +1,7 @@
 # Changelog
+## 0.2.5
+- Improve error handling in `setOAuth2Token` to only throw a `BlobApiError`
+
 ## 0.2.4 
 - Adapt library for changes with blob version v0.1.20
   - Change everything from `PUT` to `PATCH`, and the `PATCH` body to `multipart/formdata`.
