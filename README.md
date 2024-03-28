@@ -44,9 +44,7 @@ $clientSecret = 'your-client-secret';
 // if needed, get an OAuth2 token
 try {
     $blobApi->setOAuth2Token($oauthIDPUrl, $clientID, $clientSecret);
-} catch (JsonException $e) {
-    // Handle error, print $e->getMessage() for more information
-} catch (GuzzleHttp\Exception\GuzzleException $e) {
+} catch (BlobApiError $e) {
     // Handle error, print $e->getMessage() for more information
 }
 
