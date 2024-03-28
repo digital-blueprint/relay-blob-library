@@ -83,32 +83,43 @@ class BlobApi
     }
 
     /**
-     * @throws GuzzleException
-     * @throws \JsonException
+     * @throws BlobApiError
      */
     public function setOAuth2Token($oauthIDPUrl, $clientID, $clientSecret): void
     {
-        $this->oauthIDPUrl = $oauthIDPUrl;
-        $this->clientID = $clientID;
-        $this->clientSecret = $clientSecret;
+        try {
+            $this->oauthIDPUrl = $oauthIDPUrl;
+            $this->clientID = $clientID;
+            $this->clientSecret = $clientSecret;
 
-        $client = new Client();
-        $configUrl = $oauthIDPUrl.'/.well-known/openid-configuration';
-        $configBody = (string) $client->get($configUrl)->getBody();
-        $this->config = json_decode($configBody, true, 512, JSON_THROW_ON_ERROR);
+            $client = new Client();
+            $configUrl = $oauthIDPUrl.'/.well-known/openid-configuration';
+            $configBody = (string) $client->get($configUrl)->getBody();
+            $this->config = json_decode($configBody, true, 512, JSON_THROW_ON_ERROR);
+        } catch (\JsonException $e) {
+            throw new BlobApiError('Could not decode received openid-configuration json!', BlobApiError::ERROR_ID_JSON_EXCEPTION, ['message' => $e->getMessage()]);
+        } catch (GuzzleException $e) {
+            throw new BlobApiError('Could not get openid-configuration!', BlobApiError::ERROR_ID_GET_OPENID_CONFIG_FAILED, ['message' => $e->getMessage()]);
+        }
 
-        // Fetch a token
-        $tokenUrl = $this->config['token_endpoint'];
-        $response = $client->post(
-            $tokenUrl, [
-            'auth' => [$clientID, $clientSecret],
-            'form_params' => ['grant_type' => 'client_credentials'],
-        ]);
-        $data = (string) $response->getBody();
-        $json = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
+        try {
+            // Fetch a token
+            $tokenUrl = $this->config['token_endpoint'];
+            $response = $client->post(
+                $tokenUrl, [
+                'auth' => [$clientID, $clientSecret],
+                'form_params' => ['grant_type' => 'client_credentials'],
+            ]);
+            $data = (string) $response->getBody();
+            $json = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
 
-        $this->token = $json['access_token'];
-        $this->tokenExpires = time() + ($json['expires_in'] - 20);
+            $this->token = $json['access_token'];
+            $this->tokenExpires = time() + ($json['expires_in'] - 20);
+        } catch (\JsonException $e) {
+            throw new BlobApiError('Could not decode received openid-token payload json!', BlobApiError::ERROR_ID_JSON_EXCEPTION, ['message' => $e->getMessage()]);
+        } catch (GuzzleException $e) {
+            throw new BlobApiError('Could not post openid client credentials!', BlobApiError::ERROR_ID_POST_CLIENT_CREDENTIALS_FAILED, ['message' => $e->getMessage()]);
+        }
     }
 
     /**

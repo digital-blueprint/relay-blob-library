@@ -36,6 +36,11 @@ class BlobApiError extends \Exception
     // SignatureTools::verify
     public const ERROR_ID_INVALID_SIGNATURE = 'blob-library:invalid-signature';
 
+    // BlobApi::setOauth2Token
+    public const ERROR_ID_GET_OPENID_CONFIG_FAILED = 'blob-library:get-openid-configuration-failed';
+
+    public const ERROR_ID_POST_CLIENT_CREDENTIALS_FAILED = 'blob-library:post-client-credentials-failed';
+
     // General
     public const ERROR_ID_JSON_EXCEPTION = 'blob-library:json-exception';
     public const ERROR_ID_SIGNATURE_INVALID = 'blob-library:signature-invalid';
