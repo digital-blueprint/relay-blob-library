@@ -107,9 +107,9 @@ class BlobApi
             $tokenUrl = $this->config['token_endpoint'];
             $response = $client->post(
                 $tokenUrl, [
-                'auth' => [$clientID, $clientSecret],
-                'form_params' => ['grant_type' => 'client_credentials'],
-            ]);
+                    'auth' => [$clientID, $clientSecret],
+                    'form_params' => ['grant_type' => 'client_credentials'],
+                ]);
             $data = (string) $response->getBody();
             $json = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
 
@@ -573,9 +573,9 @@ class BlobApi
         // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
         try {
             $options['headers'][] = [
-                    'Accept' => 'application/ld+json',
-                    'HTTP_ACCEPT' => 'application/ld+json',
-                    'Content-Type' => 'application/json',
+                'Accept' => 'application/ld+json',
+                'HTTP_ACCEPT' => 'application/ld+json',
+                'Content-Type' => 'application/json',
             ];
             $r = $this->request('PATCH', $url, $options);
         } catch (\Exception $e) {
