@@ -575,7 +575,7 @@ class BlobApi
             $options['headers'][] = [
                 'Accept' => 'application/ld+json',
                 'HTTP_ACCEPT' => 'application/ld+json',
-                'Content-Type' => 'application/json',
+                'Content-Type' => 'application/merge-patch+json',
             ];
             $r = $this->request('PATCH', $url, $options);
         } catch (\Exception $e) {

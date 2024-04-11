@@ -1,4 +1,9 @@
 # Changelog
+
+## 0.2.6
+- Change Content-Type for `PATCH` requests to `application/merge-patch+json`
+  to match the new blob version v0.1.28
+
 ## 0.2.5
 - Improve error handling in `setOAuth2Token` to only throw a `BlobApiError`
 
