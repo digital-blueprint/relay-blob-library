@@ -140,7 +140,7 @@ class BlobApi
     public function deleteFileByIdentifier(string $identifier): void
     {
         $queryParams = [
-            'bucketID' => $this->blobBucketId,
+            'bucketIdentifier' => $this->blobBucketId,
             'creationTime' => rawurlencode(date('c')),
             'method' => 'DELETE',
         ];
@@ -188,7 +188,7 @@ class BlobApi
     public function deleteFilesByPrefix(string $prefix): void
     {
         $queryParams = [
-            'bucketID' => $this->blobBucketId,
+            'bucketIdentifier' => $this->blobBucketId,
             'creationTime' => rawurlencode(date('c')),
             'prefix' => $prefix,
             'method' => 'DELETE',
@@ -252,7 +252,7 @@ class BlobApi
     public function getFileDataByIdentifier(string $identifier, int $includeData = 1): array
     {
         $queryParams = [
-            'bucketID' => $this->blobBucketId,
+            'bucketIdentifier' => $this->blobBucketId,
             'creationTime' => rawurlencode(date('c')),
             'method' => 'GET',
             'includeData' => $includeData,
@@ -302,7 +302,7 @@ class BlobApi
     public function getFileDataByPrefix(string $prefix, int $includeData = 1): array
     {
         $queryParams = [
-            'bucketID' => $this->blobBucketId,
+            'bucketIdentifier' => $this->blobBucketId,
             'creationTime' => rawurlencode(date('c')),
             'prefix' => $prefix,
             'method' => 'GET',
@@ -356,7 +356,7 @@ class BlobApi
     public function downloadFileAsContentUrlByIdentifier(string $identifier): string
     {
         $queryParams = [
-            'bucketID' => $this->blobBucketId,
+            'bucketIdentifier' => $this->blobBucketId,
             'creationTime' => rawurlencode(date('c')),
             'method' => 'GET',
             'includeData' => 1,
@@ -415,8 +415,8 @@ class BlobApi
      * @param string $prefix             the prefix of the file
      * @param string $fileName           the name of the file
      * @param string $fileData           the data of the file
-     * @param string $additionalMetadata additional metadata for the file (optional)
-     * @param string $additionalType     additional type for the file (optional)
+     * @param string $additionalMetadata metadata for the file (optional)
+     * @param string $additionalType     type for the file (optional)
      *
      * @return string the identifier of the uploaded file
      *
@@ -425,13 +425,17 @@ class BlobApi
     public function uploadFile(string $prefix, string $fileName, string $fileData, string $additionalMetadata = '', string $additionalType = ''): string
     {
         $queryParams = [
-            'bucketID' => $this->blobBucketId,
+            'bucketIdentifier' => $this->blobBucketId,
             'creationTime' => rawurlencode(date('c')),
-            'prefix' => $prefix,
             'method' => 'POST',
+            'prefix' => $prefix,
         ];
 
-        $url = $this->getSignedBlobFilesUrlWithBody($queryParams, $additionalMetadata, $additionalType, $fileName, '', SignatureTools::generateSha256Checksum($fileData));
+        if ($additionalType) {
+            $queryParams['type'] = $additionalType;
+        }
+
+        $url = $this->getSignedBlobFilesUrlWithBody($queryParams, $additionalMetadata, $fileName, '', SignatureTools::generateSha256Checksum($fileData));
 
         // Post to Blob
         // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
@@ -453,15 +457,9 @@ class BlobApi
                     ],
                 ],
             ];
-            if ($additionalType) {
-                $options['multipart'][] = [
-                    'name' => 'additionalType',
-                    'contents' => $additionalType,
-                ];
-            }
             if ($additionalMetadata) {
                 $options['multipart'][] = [
-                    'name' => 'additionalMetadata',
+                    'name' => 'metadata',
                     'contents' => $additionalMetadata,
                 ];
             }
@@ -516,8 +514,8 @@ class BlobApi
      *
      * @param string $identifier         the identifier of the file
      * @param string $fileName           the new name of the file (optional)
-     * @param string $additionalMetadata additional metadata for the file (optional)
-     * @param string $additionalType     additional type for the file (optional)
+     * @param string $additionalMetadata metadata for the file (optional)
+     * @param string $additionalType     type for the file (optional)
      *
      * @return string the updated identifier of the file
      *
@@ -526,12 +524,16 @@ class BlobApi
     public function patchFileByIdentifier(string $identifier, string $fileName = '', string $additionalMetadata = '', string $additionalType = '', string $fileData = ''): string
     {
         $queryParams = [
-            'bucketID' => $this->blobBucketId,
+            'bucketIdentifier' => $this->blobBucketId,
             'creationTime' => rawurlencode(date('c')),
             'method' => 'PATCH',
         ];
 
-        $url = $this->getSignedBlobFilesUrlWithBody($queryParams, $additionalMetadata, $additionalType, $fileName, $identifier);
+        if ($additionalType) {
+            $queryParams['type'] = $additionalType;
+        }
+
+        $url = $this->getSignedBlobFilesUrlWithBody($queryParams, $additionalMetadata, $fileName, $identifier);
 
         // set fileName, addMetaData and addType of body
         $options = [];
@@ -556,15 +558,9 @@ class BlobApi
                 'contents' => $fileName,
             ];
         }
-        if ($additionalType) {
-            $options['multipart'][] = [
-                'name' => 'additionalType',
-                'contents' => $additionalType,
-            ];
-        }
         if ($additionalMetadata) {
             $options['multipart'][] = [
-                'name' => 'additionalMetadata',
+                'name' => 'metadata',
                 'contents' => $additionalMetadata,
             ];
         }
@@ -666,7 +662,7 @@ class BlobApi
     /**
      * @throws BlobApiError
      */
-    protected function getSignedBlobFilesUrlWithBody(array $queryParams, string $additionalMetadata = '', string $additionalType = '', string $filename = '', string $identifier = '', string $filehash = ''): string
+    protected function getSignedBlobFilesUrlWithBody(array $queryParams, string $additionalMetadata = '', string $filename = '', string $identifier = '', string $filehash = ''): string
     {
         $path = '/blob/files';
 
@@ -686,10 +682,7 @@ class BlobApi
             $body['fileHash'] = $filehash;
         }
         if ($additionalMetadata) {
-            $body['additionalMetadata'] = $additionalMetadata;
-        }
-        if ($additionalType) {
-            $body['additionalType'] = $additionalType;
+            $body['metadata'] = $additionalMetadata;
         }
 
         $body = json_encode($body, JSON_FORCE_OBJECT);
