@@ -1,7 +1,6 @@
 # Changelog
-## 0.2.6
+## 0.2.7
 - Adapt library for changes in blob version v0.1.35
-
 
 ## 0.2.6
 - Change Content-Type for `PATCH` requests to `application/merge-patch+json`
