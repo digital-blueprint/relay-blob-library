@@ -435,7 +435,7 @@ class BlobApi
             $queryParams['type'] = $additionalType;
         }
 
-        $url = $this->getSignedBlobFilesUrlWithBody($queryParams, $additionalMetadata, $fileName, '', SignatureTools::generateSha256Checksum($fileData));
+        $url = $this->getSignedBlobFilesUrlWithBody($queryParams);
 
         // Post to Blob
         // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
@@ -533,7 +533,7 @@ class BlobApi
             $queryParams['type'] = $additionalType;
         }
 
-        $url = $this->getSignedBlobFilesUrlWithBody($queryParams, $additionalMetadata, $fileName, $identifier);
+        $url = $this->getSignedBlobFilesUrlWithBody($queryParams, $identifier);
 
         // set fileName, addMetaData and addType of body
         $options = [];
@@ -662,7 +662,7 @@ class BlobApi
     /**
      * @throws BlobApiError
      */
-    protected function getSignedBlobFilesUrlWithBody(array $queryParams, string $additionalMetadata = '', string $filename = '', string $identifier = '', string $filehash = ''): string
+    protected function getSignedBlobFilesUrlWithBody(array $queryParams, string $identifier = ''): string
     {
         $path = '/blob/files';
 
@@ -670,29 +670,13 @@ class BlobApi
             $path = $path.'/'.$identifier;
         }
 
-        $body = [];
-
         // It's mandatory that "%20" is used instead of "+" for spaces in the query string, otherwise the checksum will be invalid!
         $urlPart = $path.'?'.http_build_query($queryParams, '', '&', PHP_QUERY_RFC3986);
 
-        if ($filename) {
-            $body['fileName'] = $filename;
-        }
-        if ($filehash) {
-            $body['fileHash'] = $filehash;
-        }
-        if ($additionalMetadata) {
-            $body['metadata'] = $additionalMetadata;
-        }
-
-        $body = json_encode($body, JSON_FORCE_OBJECT);
-
         $checksum = SignatureTools::generateSha256Checksum($urlPart);
-        $bcs = SignatureTools::generateSha256Checksum($body);
 
         $payload = [
             'ucs' => $checksum,
-            'bcs' => $bcs,
         ];
 
         $token = $this->createBlobSignature($payload);
