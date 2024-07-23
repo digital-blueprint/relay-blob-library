@@ -662,7 +662,7 @@ class BlobApi
     /**
      * @throws BlobApiError
      */
-    protected function getSignedBlobFilesUrlWithBody(array $queryParams, string $identifier = ''): string
+    public function getSignedBlobFilesUrlWithBody(array $queryParams, string $identifier = ''): string
     {
         $path = '/blob/files';
 
