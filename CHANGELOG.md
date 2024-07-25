@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.9
+- Make function `getSignedBlobFilesUrl` public
+
 ## 0.2.8
 - Make function `getSignedBlobFilesUrlWithBody` public
 
