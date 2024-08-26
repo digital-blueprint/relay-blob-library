@@ -299,17 +299,21 @@ class BlobApi
         return $jsonData;
     }
 
-    public function getFileDataByPrefix(string $prefix, int $includeData = 1): array
+    public function getFileDataByPrefix(string $prefix, int $includeData = 1, int $page = 1, int $perPage = 30, bool $startsWith = false): array
     {
         $queryParams = [
             'bucketIdentifier' => $this->blobBucketId,
             'creationTime' => rawurlencode(date('c')),
-            'prefix' => $prefix,
-            'method' => 'GET',
             'includeData' => $includeData,
+            'method' => 'GET',
+            'prefix' => $prefix,
         ];
 
-        $url = $this->getSignedBlobFilesUrl($queryParams);
+        if ($startsWith) {
+            $queryParams['startsWith'] = 1;
+        }
+
+        $url = $this->getSignedBlobFilesUrl($queryParams)."&page=$page&perPage=$perPage";
 
         // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
         try {
