@@ -185,22 +185,42 @@ class BlobApi
     /**
      * @throws BlobApiError
      */
-    public function deleteFilesByPrefix(string $prefix): void
+    public function deleteFilesByPrefix(string $prefix, int $page = 1, int $perPage = 50, bool $startsWith = false): array
     {
-        $queryParams = [
+        $deleteQueryParams = [
             'bucketIdentifier' => $this->blobBucketId,
             'creationTime' => rawurlencode(date('c')),
-            'prefix' => $prefix,
             'method' => 'DELETE',
         ];
-
-        $url = $this->getSignedBlobFilesUrl($queryParams);
 
         // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
         // We send a DELETE request to the blob service to delete all files with the given prefix,
         // regardless if we have files in dispatch or not, we just want to make sure that the blob files are deleted
         try {
-            $r = $this->request('DELETE', $url);
+            // holds the status codes of
+            $responses = [];
+            $r = $this->getFileDataByPrefix($prefix, 0, $page, $perPage, $startsWith);
+            foreach ($r['hydra:member'] as $item) {
+
+                $deleteUrl = $this->getSignedBlobFilesUrl($deleteQueryParams, $item['identifier']);
+                try {
+                    $r = $this->request('DELETE', $deleteUrl);
+                    $statusCode = $r->getStatusCode();
+
+                    $response = [];
+                    $response[] = $statusCode;
+                    $response[] = $r->getBody()->getContents();
+                    $responses[$item['identifier']] = $response;
+                } catch (\Exception $e) {
+                    $statusCode = $e->getCode();
+                    $response = [];
+                    $response['code'] = $statusCode;
+                    if ($e instanceof ClientException && $e->hasResponse()) {
+                        $response['message'] = $e->getMessage();
+                    }
+                    $responses[$item['identifier']] = $response;
+                }
+            }
         } catch (\Exception $e) {
             // Handle ClientExceptions. GuzzleExceptions will be caught by the general Exception handler
             if ($e instanceof ClientException && $e->hasResponse()) {
@@ -210,7 +230,6 @@ class BlobApi
                 switch ($statusCode) {
                     case 404:
                         // 404 errors are ok, because the files might not exist anymore
-                        return;
                     case 403:
                         $body = $response->getBody()->getContents();
                         $errorId = self::getErrorIdFromApiError($body);
@@ -234,16 +253,7 @@ class BlobApi
             );
         }
 
-        $statusCode = $r->getStatusCode();
-
-        // 404 errors are ok, because the files might not exist anymore
-        if ($statusCode !== 204 && $statusCode !== 404) {
-            throw new BlobApiError(
-                'Files could not be deleted from Blob!',
-                BlobApiError::ERROR_ID_DELETE_FILE_FAILED,
-                ['prefix' => $prefix, 'message' => 'Blob returned status code '.$statusCode]
-            );
-        }
+        return $responses;
     }
 
     /**
