@@ -211,7 +211,7 @@ class BlobApi
         try {
             // holds the status codes of
             $responses = [];
-            $r = $this->getFileDataByPrefix($prefix, 0, $page, $perPage, $startsWith);
+            $r = $this->getFileDataByPrefix($prefix, 0, $page, $perPage, $startsWith, $includeDeleteAt);
             foreach ($r['hydra:member'] as $item) {
 
                 $deleteUrl = $this->getSignedBlobFilesUrl($deleteQueryParams, $item['identifier']);
@@ -469,7 +469,7 @@ class BlobApi
      *
      * @throws BlobApiError if the file upload fails
      */
-    public function uploadFile(string $prefix, string $fileName, string $fileData, string $additionalMetadata = '', string $additionalType = ''): string
+    public function uploadFile(string $prefix, string $fileName, string $fileData, string $additionalMetadata = '', string $additionalType = '', string $retentionDuration = ''): string
     {
         $queryParams = [
             'bucketIdentifier' => $this->blobBucketId,
@@ -480,6 +480,10 @@ class BlobApi
 
         if ($additionalType) {
             $queryParams['type'] = $additionalType;
+        }
+
+        if ($retentionDuration) {
+            $queryParams['retentionDuration'] = $retentionDuration;
         }
 
         $url = $this->getSignedBlobFilesUrlWithBody($queryParams);
