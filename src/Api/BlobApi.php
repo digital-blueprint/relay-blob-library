@@ -137,13 +137,19 @@ class BlobApi
     /**
      * @throws BlobApiError
      */
-    public function deleteFileByIdentifier(string $identifier): void
+    public function deleteFileByIdentifier(string $identifier, bool $includeDeleteAt = false): void
     {
         $queryParams = [
             'bucketIdentifier' => $this->blobBucketId,
             'creationTime' => rawurlencode(date('c')),
             'method' => 'DELETE',
         ];
+
+        if ($includeDeleteAt) {
+            $queryParams['includeDeleteAt'] = 1;
+        }
+
+        ksort($queryParams);
 
         $url = $this->getSignedBlobFilesUrl($queryParams, $identifier);
 
@@ -185,13 +191,19 @@ class BlobApi
     /**
      * @throws BlobApiError
      */
-    public function deleteFilesByPrefix(string $prefix, int $page = 1, int $perPage = 50, bool $startsWith = false): array
+    public function deleteFilesByPrefix(string $prefix, int $page = 1, int $perPage = 50, bool $startsWith = false, bool $includeDeleteAt = false): array
     {
         $deleteQueryParams = [
             'bucketIdentifier' => $this->blobBucketId,
             'creationTime' => rawurlencode(date('c')),
             'method' => 'DELETE',
         ];
+
+        if ($includeDeleteAt) {
+            $deleteQueryParams['includeDeleteAt'] = 1;
+        }
+
+        ksort($deleteQueryParams);
 
         // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
         // We send a DELETE request to the blob service to delete all files with the given prefix,
@@ -259,7 +271,7 @@ class BlobApi
     /**
      * @throws BlobApiError
      */
-    public function getFileDataByIdentifier(string $identifier, int $includeData = 1): array
+    public function getFileDataByIdentifier(string $identifier, int $includeData = 1, bool $includeDeleteAt = false): array
     {
         $queryParams = [
             'bucketIdentifier' => $this->blobBucketId,
@@ -267,6 +279,12 @@ class BlobApi
             'method' => 'GET',
             'includeData' => $includeData,
         ];
+
+        if ($includeDeleteAt) {
+            $queryParams['includeDeleteAt'] = 1;
+        }
+
+        ksort($queryParams);
 
         $url = $this->getSignedBlobFilesUrl($queryParams, $identifier);
 
@@ -309,12 +327,11 @@ class BlobApi
         return $jsonData;
     }
 
-    public function getFileDataByPrefix(string $prefix, int $includeData = 1, int $page = 1, int $perPage = 30, bool $startsWith = false): array
+    public function getFileDataByPrefix(string $prefix, int $includeData = 1, int $page = 1, int $perPage = 30, bool $startsWith = false, bool $includeDeleteAt = false): array
     {
         $queryParams = [
             'bucketIdentifier' => $this->blobBucketId,
             'creationTime' => rawurlencode(date('c')),
-            'includeData' => $includeData,
             'method' => 'GET',
             'prefix' => $prefix,
         ];
@@ -322,6 +339,16 @@ class BlobApi
         if ($startsWith) {
             $queryParams['startsWith'] = 1;
         }
+
+        if ($includeDeleteAt) {
+            $queryParams['includeDeleteAt'] = 1;
+        }
+
+        if ($includeData) {
+            $queryParams['includeData'] = 1;
+        }
+
+        ksort($queryParams);
 
         $url = $this->getSignedBlobFilesUrl($queryParams)."&page=$page&perPage=$perPage";
 
@@ -367,7 +394,7 @@ class BlobApi
     /**
      * @throws BlobApiError
      */
-    public function downloadFileAsContentUrlByIdentifier(string $identifier): string
+    public function downloadFileAsContentUrlByIdentifier(string $identifier, bool $includeDeleteAt = false): string
     {
         $queryParams = [
             'bucketIdentifier' => $this->blobBucketId,
@@ -375,6 +402,12 @@ class BlobApi
             'method' => 'GET',
             'includeData' => 1,
         ];
+
+        if ($includeDeleteAt) {
+            $queryParams['includeDeleteAt'] = 1;
+        }
+
+        ksort($queryParams);
 
         $url = $this->getSignedBlobFilesUrl($queryParams, $identifier);
 
@@ -535,7 +568,7 @@ class BlobApi
      *
      * @throws BlobApiError if the file update fails
      */
-    public function patchFileByIdentifier(string $identifier, string $fileName = '', string $additionalMetadata = '', string $additionalType = '', string $fileData = ''): string
+    public function patchFileByIdentifier(string $identifier, string $fileName = '', string $additionalMetadata = '', string $additionalType = '', string $fileData = '', bool $includeDeleteAt = false): string
     {
         $queryParams = [
             'bucketIdentifier' => $this->blobBucketId,
@@ -543,9 +576,15 @@ class BlobApi
             'method' => 'PATCH',
         ];
 
+        if ($includeDeleteAt) {
+            $queryParams['includeDeleteAt'] = 1;
+        }
+
         if ($additionalType) {
             $queryParams['type'] = $additionalType;
         }
+
+        ksort($queryParams);
 
         $url = $this->getSignedBlobFilesUrlWithBody($queryParams, $identifier);
 
