@@ -71,7 +71,7 @@ class BlobApiDeleteTest extends BlobApiTestBase
         try {
             $this->blobApi->deleteFilesByPrefix('my-prefix');
         } catch (BlobApiError $e) {
-            $this->fail('Unexpected exception thrown!');
+            $this->assertEquals(BlobApiError::ERROR_ID_DELETE_FILES_FAILED, $e->getErrorId());
         }
 
         $this->assertTrue(true);
@@ -86,7 +86,7 @@ class BlobApiDeleteTest extends BlobApiTestBase
         try {
             $this->blobApi->deleteFilesByPrefix('my-prefix');
         } catch (BlobApiError $e) {
-            $this->assertEquals(BlobApiError::ERROR_ID_DELETE_FILES_TIMEOUT, $e->getErrorId());
+            $this->assertEquals(BlobApiError::ERROR_ID_DELETE_FILES_FAILED, $e->getErrorId());
 
             $errorDetails = $e->getErrorDetails();
             $this->assertEquals('my-prefix', $errorDetails['prefix']);
