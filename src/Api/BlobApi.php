@@ -641,12 +641,16 @@ class BlobApi
     /**
      * @throws BlobApiError
      */
-    public function getSignedBlobFilesUrl(array $queryParams, string $blobIdentifier = ''): string
+    public function getSignedBlobFilesUrl(array $queryParams, string $blobIdentifier = '', string $action = ''): string
     {
         $path = '/blob/files';
 
         if ($blobIdentifier !== '') {
             $path .= '/'.urlencode($blobIdentifier);
+
+            if ($action !== '') {
+                $path .= '/'.urlencode($action);
+            }
         }
 
         // It's mandatory that "%20" is used instead of "+" for spaces in the query string, otherwise the checksum will be invalid!
