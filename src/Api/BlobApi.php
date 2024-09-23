@@ -213,7 +213,6 @@ class BlobApi
             $responses = [];
             $r = $this->getFileDataByPrefix($prefix, 0, $page, $perPage, $startsWith, $includeDeleteAt);
             foreach ($r['hydra:member'] as $item) {
-
                 $deleteUrl = $this->getSignedBlobFilesUrl($deleteQueryParams, $item['identifier']);
                 try {
                     $r = $this->request('DELETE', $deleteUrl);
