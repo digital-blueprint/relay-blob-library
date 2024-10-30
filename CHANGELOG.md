@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.2.12
+- Rename `retentionDuration` to `deleteIn` to conform with the newest blob version
+
 ## 0.2.9
 - Make function `getSignedBlobFilesUrl` public
 
