@@ -468,7 +468,7 @@ class BlobApi
      *
      * @throws BlobApiError if the file upload fails
      */
-    public function uploadFile(string $prefix, string $fileName, string $fileData, string $additionalMetadata = '', string $additionalType = '', string $retentionDuration = ''): string
+    public function uploadFile(string $prefix, string $fileName, string $fileData, string $additionalMetadata = '', string $additionalType = '', string $deleteIn = ''): string
     {
         $queryParams = [
             'bucketIdentifier' => $this->blobBucketId,
@@ -481,8 +481,8 @@ class BlobApi
             $queryParams['type'] = $additionalType;
         }
 
-        if ($retentionDuration) {
-            $queryParams['retentionDuration'] = $retentionDuration;
+        if ($deleteIn) {
+            $queryParams['deleteIn'] = $deleteIn;
         }
 
         $url = $this->getSignedBlobFilesUrlWithBody($queryParams);
@@ -571,13 +571,17 @@ class BlobApi
      *
      * @throws BlobApiError if the file update fails
      */
-    public function patchFileByIdentifier(string $identifier, string $fileName = '', string $additionalMetadata = '', string $additionalType = '', string $fileData = '', bool $includeDeleteAt = false): string
+    public function patchFileByIdentifier(string $identifier, string $fileName = '', string $additionalMetadata = '', string $additionalType = '', string $fileData = '', bool $includeDeleteAt = false, string $deleteIn = ''): string
     {
         $queryParams = [
             'bucketIdentifier' => $this->blobBucketId,
             'creationTime' => rawurlencode(date('c')),
             'method' => 'PATCH',
         ];
+
+        if ($deleteIn) {
+            $queryParams['deleteIn'] = $deleteIn;
+        }
 
         if ($includeDeleteAt) {
             $queryParams['includeDeleteAt'] = 1;
