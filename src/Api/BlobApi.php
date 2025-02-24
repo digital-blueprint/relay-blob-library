@@ -139,9 +139,10 @@ class BlobApi
      */
     public function deleteFileByIdentifier(string $identifier, bool $includeDeleteAt = false): void
     {
+        $date = date('c');
         $queryParams = [
             'bucketIdentifier' => $this->blobBucketId,
-            'creationTime' => rawurlencode(date('c')),
+            'creationTime' => $date,
             'method' => 'DELETE',
         ];
 
@@ -395,9 +396,10 @@ class BlobApi
      */
     public function downloadFileAsContentUrlByIdentifier(string $identifier, bool $includeDeleteAt = false): string
     {
+        $date = date('c');
         $queryParams = [
             'bucketIdentifier' => $this->blobBucketId,
-            'creationTime' => rawurlencode(date('c')),
+            'creationTime' => $date,
             'method' => 'GET',
             'includeData' => 1,
         ];
@@ -470,9 +472,10 @@ class BlobApi
      */
     public function uploadFile(string $prefix, string $fileName, string $fileData, string $additionalMetadata = '', string $additionalType = '', string $deleteIn = ''): string
     {
+        $date = date('c');
         $queryParams = [
             'bucketIdentifier' => $this->blobBucketId,
-            'creationTime' => rawurlencode(date('c')),
+            'creationTime' => $date,
             'method' => 'POST',
             'prefix' => $prefix,
         ];
@@ -600,15 +603,13 @@ class BlobApi
 
         if ($fileData) {
             $options['multipart'][] = [
-                [
-                    'name' => 'file',
-                    'contents' => $fileData,
-                    'filename' => $fileName,
-                ],
-                [
-                    'name' => 'fileHash',
-                    'contents' => SignatureTools::generateSha256Checksum($fileData),
-                ],
+                'name' => 'file',
+                'contents' => $fileData,
+                'filename' => $fileName,
+            ];
+            $options['multipart'][] = [
+                'name' => 'fileHash',
+                'contents' => SignatureTools::generateSha256Checksum($fileData),
             ];
         }
 
