@@ -4,9 +4,13 @@ includes:
 
 parameters:
     inferPrivatePropertyTypeFromConstructor: true
-    level: 3
+    reportUnmatchedIgnoredErrors: false
+    level: 5
     paths:
         - src
         - tests
     excludePaths:
         - tests/bootstrap.php
+    ignoreErrors:
+        - identifier: function.alreadyNarrowedType
+        - identifier: method.alreadyNarrowedType
