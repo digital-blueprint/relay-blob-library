@@ -20,7 +20,6 @@
     "friendsofphp/php-cs-fixer": "^3.50",
     "phpstan/phpstan": "^2.0.0",
     "phpstan/phpstan-phpunit": "^2.0.0",
-    "phpstan/phpstan-symfony": "^2.0.0",
     "phpunit/phpunit": "^10.3"
   },
   "autoload": {
