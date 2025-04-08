@@ -9,17 +9,11 @@
   </coverage>
   <php>
     <ini name="error_reporting" value="-1"/>
-    <server name="APP_ENV" value="test" force="true"/>
     <server name="SHELL_VERBOSITY" value="-1"/>
-    <server name="SYMFONY_DEPRECATIONS_HELPER" value='max[direct]=0&amp;quiet[]=indirect'/>
-    <server name="KERNEL_CLASS" value="Dbp\Relay\BlobLibrary\Tests\Kernel"/>
   </php>
   <testsuites>
     <testsuite name="Project Test Suite">
       <directory>tests</directory>
     </testsuite>
   </testsuites>
-  <listeners>
-    <listener class="Symfony\Bridge\PhpUnit\SymfonyTestsListener"/>
-  </listeners>
 </phpunit>

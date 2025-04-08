@@ -15,12 +15,6 @@
   "constraintsFiltering": "strict",
   "packageRules": [
     {
-      "allowedVersions": "<6",
-      "matchPackageNames": [
-        "symfony/{/,}**"
-      ]
-    },
-    {
       "matchPackageNames": [
         "phpunit/phpunit"
       ],
