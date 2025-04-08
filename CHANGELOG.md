@@ -1,6 +1,13 @@
 # Changelog
 
-## 0.2.12
+## 0.2.14
+
+* Dropped support for PHP 8.1
+* Dropped support for Psalm
+* Added support for web-token/jwt-library v4
+* Various dependency fixes
+
+## 0.2.13
 - Rename `retentionDuration` to `deleteIn` to conform with the newest blob version
 
 ## 0.2.9
