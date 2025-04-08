@@ -24,7 +24,7 @@
       "matchPackageNames": [
         "phpunit/phpunit"
       ],
-      "allowedVersions": "<10"
+      "allowedVersions": "<11"
     }
   ]
 }
