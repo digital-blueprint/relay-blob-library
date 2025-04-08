@@ -21,8 +21,7 @@
     "phpstan/phpstan": "^2.0.0",
     "phpstan/phpstan-phpunit": "^2.0.0",
     "phpstan/phpstan-symfony": "^2.0.0",
-    "phpunit/phpunit": "^10.3",
-    "vimeo/psalm": "^5.22.2"
+    "phpunit/phpunit": "^10.3"
   },
   "autoload": {
     "psr-4": {
@@ -50,13 +49,9 @@
     "phpstan": [
       "@php vendor/bin/phpstan analyze --ansi"
     ],
-    "psalm": [
-      "@php vendor/bin/psalm"
-    ],
     "lint": [
       "@composer run cs",
-      "@composer run phpstan",
-      "@composer run psalm"
+      "@composer run phpstan"
     ],
     "cs-fix": [
       "@php vendor/bin/php-cs-fixer --ansi fix"
