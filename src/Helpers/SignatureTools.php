@@ -54,19 +54,21 @@ class SignatureTools
      * @param array $payload as json string to secure
      *
      * @return string secure token
-     *
-     * @throws \JsonException
      */
     public static function generateToken(JWK $jwk, array $payload): string
     {
         $algorithmManager = new AlgorithmManager([new HS256()]);
         $jwsBuilder = new JWSBuilder($algorithmManager);
 
-        $jws = $jwsBuilder
-            ->create()
-            ->withPayload(json_encode($payload, JSON_THROW_ON_ERROR))
-            ->addSignature($jwk, ['alg' => 'HS256'])
-            ->build();
+        try {
+            $jws = $jwsBuilder
+                ->create()
+                ->withPayload(json_encode($payload, JSON_THROW_ON_ERROR))
+                ->addSignature($jwk, ['alg' => 'HS256'])
+                ->build();
+        } catch (\JsonException $e) {
+            throw new \RuntimeException('Payload could not be encoded: '.$e->getMessage());
+        }
 
         return (new CompactSerializer())->serialize($jws, 0);
     }
@@ -90,11 +92,9 @@ class SignatureTools
             try {
                 $payload = json_decode($jws->getPayload(), true, 512, JSON_THROW_ON_ERROR);
             } catch (\JsonException $e) {
-                throw new BlobApiError('Payload could not be decoded!', BlobApiError::ERROR_ID_JSON_EXCEPTION, ['message' => $e->getMessage()]);
+                throw new BlobApiError('JWS payload is not valid JSON', BlobApiError::INVALID_SIGNATURE);
             }
         }
-        //        $ok = $jwsVerifier->verifyWithKey($jws, $jwk, 0);
-        //        $payload = json_decode($jws->getPayload(), true, 512, JSON_THROW_ON_ERROR);
 
         return $ok;
     }
@@ -117,7 +117,7 @@ class SignatureTools
         if (!SignatureTools::verifyToken($jwk, $token, $payload)) {
             /* @noinspection ForgottenDebugOutputInspection */
             // dump(['token' => $token, 'payload' => $payload, 'secret' => $secret]);
-            throw new BlobApiError('Invalid signature', BlobApiError::ERROR_ID_INVALID_SIGNATURE);
+            throw new BlobApiError('Invalid signature', BlobApiError::INVALID_SIGNATURE);
         }
 
         return $payload;

@@ -55,7 +55,7 @@ try {
     // Handle error
     var_dump($e->getMessage());
     var_dump($e->getErrorId());
-    var_dump($e->getErrorDetails());
+    var_dump($e->getBlobErrorDetails());
 }
 
 // Download a file from the blob storage by identifier and get the content url

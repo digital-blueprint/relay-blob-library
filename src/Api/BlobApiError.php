@@ -4,66 +4,81 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\BlobLibrary\Api;
 
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ServerException;
+use Symfony\Component\HttpFoundation\Response;
+
 class BlobApiError extends \Exception
 {
-    // BlobApi::uploadFile
-    public const ERROR_ID_UPLOAD_FILE_FAILED = 'blob-library:upload-file-failed';
-    public const ERROR_ID_UPLOAD_FILE_TIMEOUT = 'blob-library:upload-file-timeout';
-    public const ERROR_ID_UPLOAD_FILE_NOT_SAVED = 'blob-library:upload-file-not-saved';
-    public const ERROR_ID_UPLOAD_FILE_BUCKET_QUOTA_REACHED = 'blob-library:upload-file-bucket-quota-reached';
+    public const FILE_NOT_FOUND = 'blob-library:file-not-found';
+    public const CONFIGURATION_INVALID = 'blob-library:configuration-invalid';
+    public const REQUIRED_PARAMETER_MISSING = 'blob-library:required-parameter-missing';
+    public const SERVER_ERROR = 'blob-library:server-error';
+    public const CLIENT_ERROR = 'blob-library:client-error';
+    public const INVALID_RESPONSE = 'blob-library:invalid-response';
+    public const CREATING_SIGNATURE_FAILED = 'blob-library:creating-signature-failed';
+    public const INTERNAL_ERROR = 'blob-library:internal-error';
+    public const INVALID_SIGNATURE = 'blob-library:invalid-signature';
+    public const DEPENDENCY_ERROR = 'blob-library:missing-dependency';
 
-    public const ERROR_ID_PATCH_FILE_METHOD_NOT_SUITABLE = 'blob-library:patch-file-method-not-suitable';
-    public const ERROR_ID_PATCH_FILE_BUCKET_QUOTA_REACHED = 'blob-library:patch-file-bucket-quota-reached';
+    private ?string $errorId = null;
+    private ?string $blobErrorId = null;
+    private array $blobErrorDetails = [];
+    private ?int $statusCode = null;
 
-    // BlobApi::downloadFileAsContentUrlByIdentifier
-    public const ERROR_ID_DOWNLOAD_FILE_NOT_FOUND = 'blob-library:download-file-not-found';
-    public const ERROR_ID_DOWNLOAD_FILE_FAILED = 'blob-library:download-file-failed';
-    public const ERROR_ID_DOWNLOAD_CONTENT_URL_EMPTY = 'blob-library:download-content-url-empty';
-    public const ERROR_ID_DOWNLOAD_FILE_TIMEOUT = 'blob-library:download-file-timeout';
-
-    // BlobApi::patchFileByIdentifier
-    public const ERROR_ID_PATCH_FILE_FAILED = 'blob-library:patch-file-failed';
-    public const ERROR_ID_PATCH_FILE_TIMEOUT = 'blob-library:patch-file-timeout';
-
-    // BlobApi::deleteFileByIdentifier
-    public const ERROR_ID_DELETE_FILE_FAILED = 'blob-library:delete-file-failed';
-    public const ERROR_ID_DELETE_FILE_TIMEOUT = 'blob-library:delete-file-timeout';
-
-    // BlobApi::deleteFilesByPrefix
-    public const ERROR_ID_DELETE_FILES_FAILED = 'blob-library:delete-files-failed';
-    public const ERROR_ID_DELETE_FILES_TIMEOUT = 'blob-library:delete-files-timeout';
-
-    // SignatureTools::verify
-    public const ERROR_ID_INVALID_SIGNATURE = 'blob-library:invalid-signature';
-
-    // BlobApi::setOauth2Token
-    public const ERROR_ID_GET_OPENID_CONFIG_FAILED = 'blob-library:get-openid-configuration-failed';
-
-    public const ERROR_ID_POST_CLIENT_CREDENTIALS_FAILED = 'blob-library:post-client-credentials-failed';
-
-    // General
-    public const ERROR_ID_JSON_EXCEPTION = 'blob-library:json-exception';
-    public const ERROR_ID_SIGNATURE_INVALID = 'blob-library:signature-invalid';
-    public const ERROR_ID_CHECKSUM_INVALID = 'blob-library:checksum-invalid';
-
-    private $errorId = '';
-    private $errorDetails = [];
-
-    public function __construct(string $message = '', string $errorId = '', array $errorDetails = [], int $code = 0, ?\Throwable $previous = null)
+    public static function createFromRequestException(\Throwable $throwable, string $message): self
     {
-        $this->errorId = $errorId;
-        $this->errorDetails = $errorDetails;
+        $blobErrorId = null;
+        $blobErrorDetails = [];
+        $statusCode = null;
+        if (($throwable instanceof ClientException || $throwable instanceof ServerException) && $throwable->hasResponse()) {
+            $response = $throwable->getResponse();
+            $statusCode = $response->getStatusCode();
+            $errorId = $throwable instanceof ClientException ? self::CLIENT_ERROR : self::SERVER_ERROR;
+            if ($statusCode === Response::HTTP_NOT_FOUND) {
+                $errorId = self::FILE_NOT_FOUND;
+            }
+            try {
+                $errorResponseData = json_decode($response->getBody()->getContents(), true, flags: JSON_THROW_ON_ERROR);
+                $blobErrorId = $errorResponseData['relay:errorId'] ?? null;
+                $blobErrorDetails = $errorResponseData['relay:errorDetails'] ?? [];
+            } catch (\JsonException) {
+            }
+        } else {
+            $errorId = self::INTERNAL_ERROR;
+        }
 
-        parent::__construct($message, $code, $previous);
+        return new self($message, $errorId, $statusCode, $blobErrorId, $blobErrorDetails, $throwable);
     }
 
-    public function getErrorId(): string
+    public function __construct(string $message, string $errorId, ?int $statusCode = null,
+        ?string $blobErrorId = null, array $blobErrorDetails = [], ?\Throwable $previous = null)
+    {
+        $this->errorId = $errorId;
+        $this->statusCode = $statusCode;
+        $this->blobErrorId = $blobErrorId;
+        $this->blobErrorDetails = $blobErrorDetails;
+
+        parent::__construct($message, previous: $previous);
+    }
+
+    public function getErrorId(): ?string
     {
         return $this->errorId;
     }
 
-    public function getErrorDetails(): array
+    public function getStatusCode(): ?int
     {
-        return $this->errorDetails;
+        return $this->statusCode;
+    }
+
+    public function getBlobErrorId(): ?string
+    {
+        return $this->blobErrorId;
+    }
+
+    public function getBlobErrorDetails(): array
+    {
+        return $this->blobErrorDetails;
     }
 }

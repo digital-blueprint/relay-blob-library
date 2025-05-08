@@ -46,8 +46,8 @@ class SignedPayloadTest extends TestCase
                 'bucketID' => $bucketId,
                 'creationTime' => $creationTime,
                 'prefix' => 'MyApp/MyShare',
-                'filename' => 'Test.php',
-                'file' => hash('sha256', file_get_contents(__DIR__.'/Test.php')),
+                'filename' => 'test.txt',
+                'file' => hash('sha256', file_get_contents(__DIR__.'/test.txt')),
                 'metadata' => [],
             ];
 

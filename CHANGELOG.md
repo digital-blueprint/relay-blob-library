@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+* Complete re-make of blob library
+* Add support for custom Blob File API implementations. This will allow injecting the Blob PHP API which talks to the blob
+bundle directly.
+
 ## 0.2.14
 
 * Dropped support for PHP 8.1

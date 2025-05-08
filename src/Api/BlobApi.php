@@ -4,780 +4,238 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\BlobLibrary\Api;
 
-use Dbp\Relay\BlobLibrary\Helpers\SignatureTools;
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\BadResponseException;
-use GuzzleHttp\Exception\ClientException;
-use GuzzleHttp\Exception\GuzzleException;
-use GuzzleHttp\Exception\ServerException;
-use Psr\Http\Message\ResponseInterface;
+use Symfony\Component\HttpFoundation\Response;
 
-class BlobApi
+class BlobApi implements BlobFileApiInterface
 {
-    /**
-     * @var mixed
-     */
-    private $blobKey;
-    /**
-     * @var mixed
-     */
-    private $blobBucketId;
+    private const INCLUDE_DELETE_AT_OPTION = 'include_delete_at';
+    private const INCLUDE_DATA_OPTION = 'include_data';
+    private const DELETE_IN_OPTION = 'delete_in';
 
-    /**
-     * @var string
-     */
-    private $blobBaseUrl;
+    private ?BlobFileApiInterface $blobFileApiImpl = null;
 
-    /**
-     * @var Client
-     */
-    private $client;
-
-    /**
-     * @var string
-     */
-    private $token;
-
-    /**
-     * @var int
-     */
-    private $tokenExpires;
-
-    /**
-     * @var array
-     */
-    private $config;
-
-    /**
-     * @var string
-     */
-    private $oauthIDPUrl;
-
-    /**
-     * @var string
-     */
-    private $clientID;
-
-    /**
-     * @var string
-     */
-    private $clientSecret;
-
-    public function __construct(string $blobBaseUrl, string $blobBucketId, string $blobKey)
+    public static function getConfigNodeDefinition(): object
     {
-        $this->blobBaseUrl = $blobBaseUrl;
-        $this->blobKey = $blobKey;
+        if (class_exists('Symfony\Component\Config\Definition\Builder\TreeBuilder')) {
+            $treeBuilder = new \Symfony\Component\Config\Definition\Builder\TreeBuilder('blob_library');
+            $rootNode = $treeBuilder->getRootNode();
+            $rootNode
+                ->children()
+                    ->scalarNode('use_http_mode')
+                        ->description('Whether to use the HTTP mode, i.e. the Blob HTTP (REST) API. If false, a custom Blob API implementation will be used.')
+                        ->defaultTrue()
+                    ->end()
+                    ->scalarNode('custom_blob_api_service')
+                        ->description('The fully qualified name or alias of the service to use as custom Blob API implementation.')
+                        ->defaultValue('blob_php_api')
+                    ->end()
+                    ->scalarNode('bucket_identifier')
+                       ->description('The identifier of the Blob bucket')
+                       ->isRequired()
+                       ->cannotBeEmpty()
+                    ->end()
+                    ->arrayNode('http_mode')
+                        ->scalarNode('bucket_key')
+                            ->description('The signature key of the Blob bucket. Required for HTTP mode.')
+                        ->end()
+                        ->scalarNode('base_url')
+                           ->description('The base URL of the HTTP Blob API. Required for HTTP mode.')
+                        ->end()
+                        ->scalarNode('oidc_enabled. Whether to use OpenID connect authentication. Optional for HTTP mode.')
+                            ->defaultTrue()
+                        ->end()
+                        ->scalarNode('oidc_provider_url. Required for HTTP mode when oidc_enabled is true.')
+                        ->scalarNode('oidc_client_id. Required for HTTP mode when oidc_enabled is true.')
+                        ->end()
+                        ->scalarNode('oidc_client_secret. Required for HTTP mode when oidc_enabled is true.')
+                        ->end()
+                    ->end()
+                ->end();
 
-        // $blobBucketId should be not encoded previously!
-        $this->blobBucketId = rawurlencode($blobBucketId);
-
-        $this->client = new Client();
-
-        // empty oauth token by default
-        $this->token = '';
+            return $rootNode;
+        }
+        throw new BlobApiError('\Symfony\Component\Config\Definition\Builder\TreeBuilder must be declared to use '.__METHOD__,
+            BlobApiError::DEPENDENCY_ERROR);
     }
 
-    public function setClient(Client $client): void
+    public static function createHttpModeConfig(string $bucketIdentifier,
+        string $bucketKey, string $blobBaseUrl, bool $oidcEnabled = false,
+        ?string $oidcProviderUrl = null, ?string $oidcClientId = null, ?string $oidcClientSecret = null): array
     {
-        $this->client = $client;
-    }
-
-    /**
-     * @throws BlobApiError
-     */
-    public function setOAuth2Token($oauthIDPUrl, $clientID, $clientSecret): void
-    {
-        try {
-            $this->oauthIDPUrl = $oauthIDPUrl;
-            $this->clientID = $clientID;
-            $this->clientSecret = $clientSecret;
-
-            $client = new Client();
-            $configUrl = $oauthIDPUrl.'/.well-known/openid-configuration';
-            $configBody = (string) $client->get($configUrl)->getBody();
-            $this->config = json_decode($configBody, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException $e) {
-            throw new BlobApiError('Could not decode received openid-configuration json!', BlobApiError::ERROR_ID_JSON_EXCEPTION, ['message' => $e->getMessage()]);
-        } catch (GuzzleException $e) {
-            throw new BlobApiError('Could not get openid-configuration!', BlobApiError::ERROR_ID_GET_OPENID_CONFIG_FAILED, ['message' => $e->getMessage()]);
-        }
-
-        try {
-            // Fetch a token
-            $tokenUrl = $this->config['token_endpoint'];
-            $response = $client->post(
-                $tokenUrl, [
-                    'auth' => [$clientID, $clientSecret],
-                    'form_params' => ['grant_type' => 'client_credentials'],
-                ]);
-            $data = (string) $response->getBody();
-            $json = json_decode($data, true, 512, JSON_THROW_ON_ERROR);
-
-            $this->token = $json['access_token'];
-            $this->tokenExpires = time() + ($json['expires_in'] - 20);
-        } catch (\JsonException $e) {
-            throw new BlobApiError('Could not decode received openid-token payload json!', BlobApiError::ERROR_ID_JSON_EXCEPTION, ['message' => $e->getMessage()]);
-        } catch (GuzzleException $e) {
-            throw new BlobApiError('Could not post openid client credentials!', BlobApiError::ERROR_ID_POST_CLIENT_CREDENTIALS_FAILED, ['message' => $e->getMessage()]);
-        }
-    }
-
-    /**
-     * @throws BlobApiError
-     */
-    public function createBlobSignature($payload): string
-    {
-        try {
-            return SignatureTools::create($this->blobKey, $payload);
-        } catch (\JsonException $e) {
-            throw new BlobApiError('Payload could not be signed for blob storage!', BlobApiError::ERROR_ID_JSON_EXCEPTION, ['message' => $e->getMessage()]);
-        }
-    }
-
-    /**
-     * @throws BlobApiError
-     */
-    public function deleteFileByIdentifier(string $identifier, bool $includeDeleteAt = false): void
-    {
-        $date = date('c');
-        $queryParams = [
-            'bucketIdentifier' => $this->blobBucketId,
-            'creationTime' => $date,
-            'method' => 'DELETE',
-        ];
-
-        if ($includeDeleteAt) {
-            $queryParams['includeDeleteAt'] = 1;
-        }
-
-        ksort($queryParams);
-
-        $url = $this->getSignedBlobFilesUrl($queryParams, $identifier);
-
-        // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
-        try {
-            $r = $this->request('DELETE', $url);
-        } catch (\Exception $e) {
-            // Handle ClientExceptions. GuzzleExceptions will be caught by the general Exception handler
-            if ($e instanceof ClientException && $e->hasResponse()) {
-                $response = $e->getResponse();
-                $statusCode = $response->getStatusCode();
-
-                switch ($statusCode) {
-                    case 404:
-                        // 404 errors are ok, because the file might not exist anymore
-                        return;
-                    case 403:
-                        $body = $response->getBody()->getContents();
-                        $errorId = self::getErrorIdFromApiError($body);
-
-                        if ($errorId === 'blob:check-signature-creation-time-too-old') {
-                            // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
-                            throw new BlobApiError('Request too old and timed out! Please try again.', BlobApiError::ERROR_ID_DELETE_FILE_TIMEOUT, ['identifier' => $identifier, 'message' => $e->getMessage()]);
-                        }
-                        $this->handleSignatureError($errorId, $e);
-                }
-            }
-
-            throw new BlobApiError('File could not be deleted from Blob!', BlobApiError::ERROR_ID_DELETE_FILE_FAILED, ['identifier' => $identifier, 'message' => $e->getMessage()]);
-        }
-
-        $statusCode = $r->getStatusCode();
-
-        if ($statusCode !== 204) {
-            throw new BlobApiError('File could not be deleted from Blob!', BlobApiError::ERROR_ID_DELETE_FILE_FAILED, ['identifier' => $identifier, 'message' => 'Blob returned status code '.$statusCode]);
-        }
-    }
-
-    /**
-     * @throws BlobApiError
-     */
-    public function deleteFilesByPrefix(string $prefix, int $page = 1, int $perPage = 50, bool $startsWith = false, bool $includeDeleteAt = false): array
-    {
-        $deleteQueryParams = [
-            'bucketIdentifier' => $this->blobBucketId,
-            'creationTime' => rawurlencode(date('c')),
-            'method' => 'DELETE',
-        ];
-
-        if ($includeDeleteAt) {
-            $deleteQueryParams['includeDeleteAt'] = 1;
-        }
-
-        ksort($deleteQueryParams);
-
-        // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
-        // We send a DELETE request to the blob service to delete all files with the given prefix,
-        // regardless if we have files in dispatch or not, we just want to make sure that the blob files are deleted
-        try {
-            // holds the status codes of
-            $responses = [];
-            $r = $this->getFileDataByPrefix($prefix, 0, $page, $perPage, $startsWith, $includeDeleteAt);
-            foreach ($r['hydra:member'] as $item) {
-                $deleteUrl = $this->getSignedBlobFilesUrl($deleteQueryParams, $item['identifier']);
-                try {
-                    $r = $this->request('DELETE', $deleteUrl);
-                    $statusCode = $r->getStatusCode();
-
-                    $response = [];
-                    $response[] = $statusCode;
-                    $response[] = $r->getBody()->getContents();
-                    $responses[$item['identifier']] = $response;
-                } catch (\Exception $e) {
-                    $statusCode = $e->getCode();
-                    $response = [];
-                    $response['code'] = $statusCode;
-                    if ($e instanceof ClientException && $e->hasResponse()) {
-                        $response['message'] = $e->getMessage();
-                    }
-                    $responses[$item['identifier']] = $response;
-                }
-            }
-        } catch (\Exception $e) {
-            // Handle ClientExceptions. GuzzleExceptions will be caught by the general Exception handler
-            if ($e instanceof ClientException && $e->hasResponse()) {
-                $response = $e->getResponse();
-                $statusCode = $response->getStatusCode();
-
-                switch ($statusCode) {
-                    case 404:
-                        // 404 errors are ok, because the files might not exist anymore
-                    case 403:
-                        $body = $response->getBody()->getContents();
-                        $errorId = self::getErrorIdFromApiError($body);
-
-                        if ($errorId === 'blob:delete-file-data-by-prefix-creation-time-too-old') {
-                            // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
-                            throw new BlobApiError(
-                                'Request too old and timed out! Please try again.',
-                                BlobApiError::ERROR_ID_DELETE_FILES_TIMEOUT,
-                                ['prefix' => $prefix, 'message' => $e->getMessage()]
-                            );
-                        }
-                        $this->handleSignatureError($errorId, $e);
-                }
-            }
-
-            throw new BlobApiError(
-                'Files could not be deleted from Blob!',
-                BlobApiError::ERROR_ID_DELETE_FILES_FAILED,
-                ['prefix' => $prefix, 'message' => $e->getMessage()]
-            );
-        }
-
-        return $responses;
-    }
-
-    /**
-     * @throws BlobApiError
-     */
-    public function getFileDataByIdentifier(string $identifier, int $includeData = 1, bool $includeDeleteAt = false): array
-    {
-        $queryParams = [
-            'bucketIdentifier' => $this->blobBucketId,
-            'creationTime' => rawurlencode(date('c')),
-            'method' => 'GET',
-            'includeData' => $includeData,
-        ];
-
-        if ($includeDeleteAt) {
-            $queryParams['includeDeleteAt'] = 1;
-        }
-
-        ksort($queryParams);
-
-        $url = $this->getSignedBlobFilesUrl($queryParams, $identifier);
-
-        // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
-        try {
-            $r = $this->request('GET', $url);
-        } catch (\Exception $e) {
-            // Handle ClientExceptions. GuzzleExceptions will be caught by the general Exception handler
-            if ($e instanceof ClientException && $e->hasResponse()) {
-                $response = $e->getResponse();
-                $statusCode = $response->getStatusCode();
-
-                switch ($statusCode) {
-                    case 404:
-                        // Handle 404 errors distinctively
-                        throw new BlobApiError('File was not found!', BlobApiError::ERROR_ID_DOWNLOAD_FILE_NOT_FOUND, ['identifier' => $identifier]);
-                    case 403:
-                        $body = $response->getBody()->getContents();
-                        $errorId = self::getErrorIdFromApiError($body);
-
-                        if ($errorId === 'blob:check-signature-creation-time-too-old') {
-                            // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
-                            throw new BlobApiError('Request too old and timed out! Please try again.', BlobApiError::ERROR_ID_DOWNLOAD_FILE_TIMEOUT, ['identifier' => $identifier, 'message' => $e->getMessage()]);
-                        }
-                        $this->handleSignatureError($errorId, $e);
-                }
-            }
-
-            throw new BlobApiError('File could not be downloaded from Blob!', BlobApiError::ERROR_ID_DOWNLOAD_FILE_FAILED, ['identifier' => $identifier, 'message' => $e->getMessage()]);
-        }
-
-        $result = $r->getBody()->getContents();
-
-        try {
-            $jsonData = json_decode($result, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException $e) {
-            throw new BlobApiError('Result could not be decoded!', BlobApiError::ERROR_ID_JSON_EXCEPTION, ['message' => $e->getMessage()]);
-        }
-
-        return $jsonData;
-    }
-
-    public function getFileDataByPrefix(string $prefix, int $includeData = 1, int $page = 1, int $perPage = 30, bool $startsWith = false, bool $includeDeleteAt = false): array
-    {
-        $queryParams = [
-            'bucketIdentifier' => $this->blobBucketId,
-            'creationTime' => rawurlencode(date('c')),
-            'method' => 'GET',
-            'prefix' => $prefix,
-        ];
-
-        if ($startsWith) {
-            $queryParams['startsWith'] = 1;
-        }
-
-        if ($includeDeleteAt) {
-            $queryParams['includeDeleteAt'] = 1;
-        }
-
-        if ($includeData) {
-            $queryParams['includeData'] = 1;
-        }
-
-        ksort($queryParams);
-
-        $url = $this->getSignedBlobFilesUrl($queryParams)."&page=$page&perPage=$perPage";
-
-        // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
-        try {
-            $r = $this->request('GET', $url);
-        } catch (\Exception $e) {
-            // Handle ClientExceptions. GuzzleExceptions will be caught by the general Exception handler
-            if ($e instanceof ClientException && $e->hasResponse()) {
-                $response = $e->getResponse();
-                $statusCode = $response->getStatusCode();
-
-                switch ($statusCode) {
-                    case 404:
-                        // Handle 404 errors distinctively
-                        throw new BlobApiError('Files were not found!', BlobApiError::ERROR_ID_DOWNLOAD_FILE_NOT_FOUND, ['prefix' => $prefix]);
-                    case 403:
-                        $body = $response->getBody()->getContents();
-                        $errorId = self::getErrorIdFromApiError($body);
-
-                        if ($errorId === 'blob:check-signature-creation-time-too-old') {
-                            // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
-                            throw new BlobApiError('Request too old and timed out! Please try again.', BlobApiError::ERROR_ID_DOWNLOAD_FILE_TIMEOUT, ['prefix' => $prefix, 'message' => $e->getMessage()]);
-                        }
-                        $this->handleSignatureError($errorId, $e);
-                }
-            }
-
-            throw new BlobApiError('File could not be downloaded from Blob!', BlobApiError::ERROR_ID_DOWNLOAD_FILE_FAILED, ['prefix' => $prefix, 'message' => $e->getMessage()]);
-        }
-
-        $result = $r->getBody()->getContents();
-
-        try {
-            $jsonData = json_decode($result, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException $e) {
-            throw new BlobApiError('Result could not be decoded!', BlobApiError::ERROR_ID_JSON_EXCEPTION, ['message' => $e->getMessage()]);
-        }
-
-        return $jsonData;
-    }
-
-    /**
-     * @throws BlobApiError
-     */
-    public function downloadFileAsContentUrlByIdentifier(string $identifier, bool $includeDeleteAt = false): string
-    {
-        $date = date('c');
-        $queryParams = [
-            'bucketIdentifier' => $this->blobBucketId,
-            'creationTime' => $date,
-            'method' => 'GET',
-            'includeData' => 1,
-        ];
-
-        if ($includeDeleteAt) {
-            $queryParams['includeDeleteAt'] = 1;
-        }
-
-        ksort($queryParams);
-
-        $url = $this->getSignedBlobFilesUrl($queryParams, $identifier);
-
-        // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
-        try {
-            $r = $this->request('GET', $url);
-        } catch (\Exception $e) {
-            // Handle ClientExceptions. GuzzleExceptions will be caught by the general Exception handler
-            if ($e instanceof ClientException && $e->hasResponse()) {
-                $response = $e->getResponse();
-                $statusCode = $response->getStatusCode();
-
-                switch ($statusCode) {
-                    case 404:
-                        // Handle 404 errors distinctively
-                        throw new BlobApiError('File was not found!', BlobApiError::ERROR_ID_DOWNLOAD_FILE_NOT_FOUND, ['identifier' => $identifier]);
-                    case 403:
-                        $body = $response->getBody()->getContents();
-                        $errorId = self::getErrorIdFromApiError($body);
-
-                        if ($errorId === 'blob:check-signature-creation-time-too-old') {
-                            // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
-                            throw new BlobApiError('Request too old and timed out! Please try again.', BlobApiError::ERROR_ID_DOWNLOAD_FILE_TIMEOUT, ['identifier' => $identifier, 'message' => $e->getMessage()]);
-                        }
-                        $this->handleSignatureError($errorId, $e);
-                }
-            }
-
-            throw new BlobApiError('File could not be downloaded from Blob!', BlobApiError::ERROR_ID_DOWNLOAD_FILE_FAILED, ['identifier' => $identifier, 'message' => $e->getMessage()]);
-        }
-
-        $result = $r->getBody()->getContents();
-
-        try {
-            $jsonData = json_decode($result, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException $e) {
-            throw new BlobApiError('Result could not be decoded!', BlobApiError::ERROR_ID_JSON_EXCEPTION, ['message' => $e->getMessage()]);
-        }
-
-        $contentUrl = $jsonData['contentUrl'] ?? '';
-
-        if ($contentUrl === '') {
-            throw new BlobApiError('File could not be downloaded from Blob!', BlobApiError::ERROR_ID_DOWNLOAD_CONTENT_URL_EMPTY, ['identifier' => $identifier, 'message' => 'No contentUrl returned from Blob!']);
-        }
-
-        return $contentUrl;
-    }
-
-    /**
-     * Uploads a file to the Blob service.
-     *
-     * @param string $prefix             the prefix of the file
-     * @param string $fileName           the name of the file
-     * @param string $fileData           the data of the file
-     * @param string $additionalMetadata metadata for the file (optional)
-     * @param string $additionalType     type for the file (optional)
-     *
-     * @return string the identifier of the uploaded file
-     *
-     * @throws BlobApiError if the file upload fails
-     */
-    public function uploadFile(string $prefix, string $fileName, string $fileData, string $additionalMetadata = '', string $additionalType = '', string $deleteIn = ''): string
-    {
-        $date = date('c');
-        $queryParams = [
-            'bucketIdentifier' => $this->blobBucketId,
-            'creationTime' => $date,
-            'method' => 'POST',
-            'prefix' => $prefix,
-        ];
-
-        if ($additionalType) {
-            $queryParams['type'] = $additionalType;
-        }
-
-        if ($deleteIn) {
-            $queryParams['deleteIn'] = $deleteIn;
-        }
-
-        $url = $this->getSignedBlobFilesUrlWithBody($queryParams);
-
-        // Post to Blob
-        // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
-        try {
-            $options = [
-                'multipart' => [
-                    [
-                        'name' => 'file',
-                        'contents' => $fileData,
-                        'filename' => $fileName,
-                    ],
-                    [
-                        'name' => 'fileName',
-                        'contents' => $fileName,
-                    ],
-                    [
-                        'name' => 'fileHash',
-                        'contents' => SignatureTools::generateSha256Checksum($fileData),
-                    ],
+        return [
+            'blob_library' => [
+                'bucket_identifier' => $bucketIdentifier,
+                'use_http_mode' => true,
+                'http_mode' => [
+                    'bucket_key' => $bucketKey,
+                    'blob_base_url' => $blobBaseUrl,
+                    'oidc_enabled' => $oidcEnabled,
+                    'oidc_provider_url' => $oidcProviderUrl,
+                    'oidc_client_id' => $oidcClientId,
+                    'oidc_client_secret' => $oidcClientSecret,
                 ],
-            ];
-            if ($additionalMetadata) {
-                $options['multipart'][] = [
-                    'name' => 'metadata',
-                    'contents' => $additionalMetadata,
-                ];
-            }
-            $r = $this->request('POST', $url, $options);
-        } catch (\Exception $e) {
-            // Handle ClientExceptions (403) and ServerException (500)
-            // GuzzleExceptions will be caught by the general Exception handler
-            if (($e instanceof ClientException || $e instanceof ServerException) && $e->hasResponse()) {
-                $response = $e->getResponse();
-                $statusCode = $response->getStatusCode();
-                $body = $response->getBody()->getContents();
-                $errorId = self::getErrorIdFromApiError($body);
-
-                switch ($statusCode) {
-                    case 403:
-                        if ($errorId === 'blob:create-file-data-creation-time-too-old') {
-                            // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
-                            throw new BlobApiError('Request too old and timed out! Please try again.', BlobApiError::ERROR_ID_UPLOAD_FILE_TIMEOUT, ['message' => $e->getMessage()]);
-                        }
-                        $this->handleSignatureError($errorId, $e);
-                        break;
-                    case 500:
-                        if ($errorId === 'blob:file-not-saved') {
-                            throw new BlobApiError('File could not be saved!', BlobApiError::ERROR_ID_UPLOAD_FILE_NOT_SAVED, ['message' => $e->getMessage()]);
-                        }
-                        break;
-                    case 507:
-                        if ($errorId === 'blob:create-file-data-bucket-quota-reached') {
-                            throw new BlobApiError('Bucket quota is reached!', BlobApiError::ERROR_ID_UPLOAD_FILE_BUCKET_QUOTA_REACHED, ['message' => $e->getMessage()]);
-                        }
-                        break;
-                }
-            }
-
-            throw new BlobApiError('File could not be uploaded to Blob!', BlobApiError::ERROR_ID_UPLOAD_FILE_FAILED, ['prefix' => $prefix, 'fileName' => $fileName, 'message' => $e->getMessage()]);
-        }
-
-        $result = $r->getBody()->getContents();
-        $jsonData = json_decode($result, true);
-        $identifier = $jsonData['identifier'] ?? '';
-
-        if ($identifier === '') {
-            throw new BlobApiError('File could not be uploaded to Blob!', BlobApiError::ERROR_ID_UPLOAD_FILE_FAILED, ['prefix' => $prefix, 'fileName' => $fileName, 'message' => 'No identifier returned from Blob!']);
-        }
-
-        // Return the blob file ID
-        return $identifier;
+            ],
+        ];
     }
 
-    /**
-     * Updates a file identified by its identifier in the Blob service.
-     *
-     * @param string $identifier         the identifier of the file
-     * @param string $fileName           the new name of the file (optional)
-     * @param string $additionalMetadata metadata for the file (optional)
-     * @param string $additionalType     type for the file (optional)
-     *
-     * @return string the updated identifier of the file
-     *
-     * @throws BlobApiError if the file update fails
-     */
-    public function patchFileByIdentifier(string $identifier, string $fileName = '', string $additionalMetadata = '', string $additionalType = '', string $fileData = '', bool $includeDeleteAt = false, string $deleteIn = ''): string
+    public static function createCustomBlobApiConfig(string $bucketIdentifier,
+        string $customBlobApiService = 'blob_php_api'): array
     {
-        $queryParams = [
-            'bucketIdentifier' => $this->blobBucketId,
-            'creationTime' => rawurlencode(date('c')),
-            'method' => 'PATCH',
+        return [
+            'blob_library' => [
+                'bucket_identifier' => $bucketIdentifier,
+                'use_http_mode' => false,
+                'custom_blob_api_service' => $customBlobApiService,
+            ],
         ];
-
-        if ($deleteIn) {
-            $queryParams['deleteIn'] = $deleteIn;
-        }
-
-        if ($includeDeleteAt) {
-            $queryParams['includeDeleteAt'] = 1;
-        }
-
-        if ($additionalType) {
-            $queryParams['type'] = $additionalType;
-        }
-
-        ksort($queryParams);
-
-        $url = $this->getSignedBlobFilesUrlWithBody($queryParams, $identifier);
-
-        // set fileName, addMetaData and addType of body
-        $options = [];
-
-        if ($fileData) {
-            $options['multipart'][] = [
-                'name' => 'file',
-                'contents' => $fileData,
-                'filename' => $fileName,
-            ];
-            $options['multipart'][] = [
-                'name' => 'fileHash',
-                'contents' => SignatureTools::generateSha256Checksum($fileData),
-            ];
-        }
-
-        if ($fileName) {
-            $options['multipart'][] = [
-                'name' => 'fileName',
-                'contents' => $fileName,
-            ];
-        }
-        if ($additionalMetadata) {
-            $options['multipart'][] = [
-                'name' => 'metadata',
-                'contents' => $additionalMetadata,
-            ];
-        }
-
-        // PATCH to Blob
-        // https://github.com/digital-blueprint/relay-blob-bundle/blob/main/doc/api.md
-        try {
-            $options['headers'][] = [
-                'Accept' => 'application/ld+json',
-                'HTTP_ACCEPT' => 'application/ld+json',
-                'Content-Type' => 'application/merge-patch+json',
-            ];
-            $r = $this->request('PATCH', $url, $options);
-        } catch (\Exception $e) {
-            // Handle ClientExceptions (403) and ServerException (500)
-            // GuzzleExceptions will be caught by the general Exception handler
-            if (($e instanceof ClientException || $e instanceof ServerException) && $e->hasResponse()) {
-                $response = $e->getResponse();
-                $statusCode = $response->getStatusCode();
-                $body = $response->getBody()->getContents();
-                $errorId = self::getErrorIdFromApiError($body);
-
-                switch ($statusCode) {
-                    case 403:
-                        if ($errorId === 'blob:create-file-data-creation-time-too-old') {
-                            // The parameter creationTime is too old, therefore the request timed out and a new request has to be created, signed and sent
-                            throw new BlobApiError('Request too old and timed out! Please try again.', BlobApiError::ERROR_ID_PATCH_FILE_TIMEOUT, ['message' => $e->getMessage()]);
-                        }
-                        $this->handleSignatureError($errorId, $e);
-                        break;
-
-                    case 405:
-                        if ($errorId === 'blob:create-file-data-method-not-suitable') {
-                            throw new BlobApiError('The given method in url is not the same as the used method! Please try again.', BlobApiError::ERROR_ID_PATCH_FILE_METHOD_NOT_SUITABLE, ['message' => $e->getMessage()]);
-                        }
-                        break;
-
-                    case 507:
-                        if ($errorId === 'blob:create-file-data-bucket-quota-reached') {
-                            throw new BlobApiError('The bucket quota of the given bucket is reached! Please try again or contact your bucket owner.', BlobApiError::ERROR_ID_PATCH_FILE_BUCKET_QUOTA_REACHED, ['message' => $e->getMessage()]);
-                        }
-                        break;
-                }
-            }
-
-            throw new BlobApiError('File could not be uploaded to Blob!', BlobApiError::ERROR_ID_PATCH_FILE_FAILED, ['identifier' => $identifier, 'fileName' => $fileName, 'message' => $e->getMessage()]);
-        }
-
-        $result = $r->getBody()->getContents();
-        $jsonData = json_decode($result, true);
-        $identifier = $jsonData['identifier'] ?? '';
-
-        if ($identifier === '') {
-            throw new BlobApiError('File could not be uploaded to Blob!', BlobApiError::ERROR_ID_PATCH_FILE_FAILED, ['identifier' => $identifier, 'fileName' => $fileName, 'message' => 'No identifier returned from Blob!']);
-        }
-
-        // Return the blob file ID
-        return $identifier;
     }
 
     /**
      * @throws BlobApiError
      */
-    protected function handleSignatureError(string $errorId, BadResponseException $e)
+    public static function createFromConfig(array $config, ?object $container = null): BlobApi
     {
-        if ($errorId === 'blob:checksum-invalid') {
-            throw new BlobApiError('The signature check was successful, but one of the given checksums ucs or bcs is invalid. Please try again.', BlobApiError::ERROR_ID_CHECKSUM_INVALID, ['message' => $e->getMessage()]);
+        $bucketIdentifier = $config['blob_library']['bucket_identifier'] ?? null;
+        if ($bucketIdentifier === null) {
+            throw new BlobApiError('blob_library config is invalid: bucket_identifier is required',
+                BlobApiError::CONFIGURATION_INVALID);
         }
-        if ($errorId === 'blob:signature-invalid') {
-            throw new BlobApiError('The signature check was not successful. Maybe your key is invalid, or something went wrong while signing. Please try again', BlobApiError::ERROR_ID_SIGNATURE_INVALID, ['message' => $e->getMessage()]);
-        }
-    }
 
-    /**
-     * @throws BlobApiError
-     */
-    public function getSignedBlobFilesUrl(array $queryParams, string $blobIdentifier = '', string $action = ''): string
-    {
-        $path = '/blob/files';
-
-        if ($blobIdentifier !== '') {
-            $path .= '/'.urlencode($blobIdentifier);
-
-            if ($action !== '') {
-                $path .= '/'.urlencode($action);
+        $useHttpMode = $config['blob_library']['use_http_mode'] ?? true;
+        if ($useHttpMode) {
+            $blobFileApiImpl = new BlobHttpApi();
+            $blobFileApiImpl->setConfig($config['blob_library']['http_mode'] ?? []);
+        } else {
+            $customBlobApiService = $config['blob_library']['custom_blob_api_service'] ?? null;
+            if ($customBlobApiService === null) {
+                throw new BlobApiError(
+                    'blob_library config is invalid: custom_blob_api_service is required when \'use_http_mode\' is false',
+                    BlobApiError::CONFIGURATION_INVALID);
+            }
+            if ($container === null) {
+                throw new BlobApiError('Container is required when \'use_http_mode\' is true',
+                    BlobApiError::CONFIGURATION_INVALID);
+            }
+            //            if (get_class($container) !== '\Symfony\Component\DependencyInjection\Container') {
+            //                throw new BlobApiError('parameter \'container\' must of of type \'\Symfony\Component\DependencyInjection\Container\'',
+            //                    BlobApiError::DEPENDENCY_ERROR);
+            //            }
+            try {
+                $blobFileApiImpl = $container->get($customBlobApiService);
+            } catch (\Throwable $exception) {
+                throw new BlobApiError(
+                    'Custom Blob API implementation service or alias not found: '.$exception->getMessage(),
+                    BlobApiError::CONFIGURATION_INVALID);
+            }
+            if (false === $blobFileApiImpl instanceof BlobFileApiInterface) {
+                throw new BlobApiError(
+                    'Custom Blob API implementation service or alias must implement interface '.
+                    BlobFileApiInterface::class, BlobApiError::CONFIGURATION_INVALID);
             }
         }
+        $blobFileApiImpl->setBucketIdentifier($bucketIdentifier);
 
-        // It's mandatory that "%20" is used instead of "+" for spaces in the query string, otherwise the checksum will be invalid!
-        $urlPart = $path.'?'.http_build_query($queryParams, '', '&', PHP_QUERY_RFC3986);
+        return new BlobApi($blobFileApiImpl);
+    }
 
-        $checksum = SignatureTools::generateSha256Checksum($urlPart);
+    public static function setIncludeDeleteAt(array &$options, bool $includeDeleteAt): void
+    {
+        $options[self::INCLUDE_DELETE_AT_OPTION] = $includeDeleteAt;
+    }
 
-        $payload = [
-            'ucs' => $checksum,
-        ];
+    public static function getIncludeDeleteAt(array $options): bool
+    {
+        return $options[self::INCLUDE_DELETE_AT_OPTION] ?? false;
+    }
 
-        $token = $this->createBlobSignature($payload);
+    public static function setIncludeData(array &$options, bool $includeData): void
+    {
+        $options[self::INCLUDE_DATA_OPTION] = $includeData;
+    }
 
-        return $this->blobBaseUrl.$urlPart.'&sig='.$token;
+    public static function getIncludeData(array $options): bool
+    {
+        return $options[self::INCLUDE_DATA_OPTION] ?? false;
+    }
+
+    public static function setDeleteIn(array &$options, string $deleteIn): void
+    {
+        $options[self::DELETE_IN_OPTION] = $deleteIn;
+    }
+
+    public static function getDeleteIn(array $options): ?string
+    {
+        return $options[self::DELETE_IN_OPTION] ?? null;
+    }
+
+    public function __construct(BlobFileApiInterface $blobFileApiImpl)
+    {
+        $this->blobFileApiImpl = $blobFileApiImpl;
+    }
+
+    public function getBlobFileApiImpl(): BlobFileApiInterface
+    {
+        return $this->blobFileApiImpl;
+    }
+
+    public function setBucketIdentifier(string $bucketIdentifier): void
+    {
+        $this->blobFileApiImpl->setBucketIdentifier($bucketIdentifier);
     }
 
     /**
      * @throws BlobApiError
      */
-    public function getSignedBlobFilesUrlWithBody(array $queryParams, string $identifier = ''): string
+    public function addFile(BlobFile $blobFile, array $options = []): BlobFile
     {
-        $path = '/blob/files';
-
-        if ($identifier) {
-            $path = $path.'/'.$identifier;
-        }
-
-        // It's mandatory that "%20" is used instead of "+" for spaces in the query string, otherwise the checksum will be invalid!
-        $urlPart = $path.'?'.http_build_query($queryParams, '', '&', PHP_QUERY_RFC3986);
-
-        $checksum = SignatureTools::generateSha256Checksum($urlPart);
-
-        $payload = [
-            'ucs' => $checksum,
-        ];
-
-        $token = $this->createBlobSignature($payload);
-
-        return $this->blobBaseUrl.$urlPart.'&sig='.$token;
+        return $this->blobFileApiImpl->addFile($blobFile, $options);
     }
 
     /**
-     * @throws GuzzleException
-     * @throws \JsonException
+     * @throws BlobApiError
      */
-    private function request(string $method, $uri = '', array $options = []): ResponseInterface
+    public function updateFile(BlobFile $blobFile, array $options = []): BlobFile
     {
-        // refresh token if already expired
-        if ($this->token !== '' && time() > $this->tokenExpires) {
-            $this->setOAuth2Token($this->oauthIDPUrl, $this->clientID, $this->clientSecret);
-        }
-        if ($this->token) {
-            $options['headers']['Authorization'] = "Bearer $this->token";
-        }
-
-        return $this->client->request($method, $uri, $options);
+        return $this->blobFileApiImpl->updateFile($blobFile, $options);
     }
 
     /**
-     * Decode the error id from the body of a request from an ApiError.
+     * @throws BlobApiError
      */
-    private static function getErrorIdFromApiError(string $body): string
+    public function removeFile(string $identifier, array $options = []): void
     {
-        try {
-            $jsonData = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException $e) {
-            return '';
-        }
+        $this->blobFileApiImpl->removeFile($identifier, $options);
+    }
 
-        // We switched to using relay:errorId in the response body, but some services still use the old format.
-        return $jsonData['relay:errorId'] ?? $jsonData['errorId'] ?? '';
+    /**
+     * @throws BlobApiError
+     */
+    public function removeFiles(array $options = []): void
+    {
+        $this->blobFileApiImpl->removeFiles($options);
+    }
+
+    /**
+     * @throws BlobApiError
+     */
+    public function getFile(string $identifier, array $options = []): BlobFile
+    {
+        return $this->blobFileApiImpl->getFile($identifier, $options);
+    }
+
+    /**
+     * @throws BlobApiError
+     */
+    public function getFiles(int $currentPage = 1, int $maxNumItemsPerPage = 30, array $options = []): array
+    {
+        return $this->blobFileApiImpl->getFiles($currentPage, $maxNumItemsPerPage, $options);
+    }
+
+    /**
+     * @throws BlobApiError
+     */
+    public function getFileResponse(string $identifier, array $options = []): Response
+    {
+        return $this->blobFileApiImpl->getFileResponse($identifier, $options);
     }
 }
