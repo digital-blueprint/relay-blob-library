@@ -1,0 +1,3 @@
+{
+  "symbol-whitelist" : ["Symfony\\Component\\Config\\Definition\\Builder\\TreeBuilder"]
+}
