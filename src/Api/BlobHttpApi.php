@@ -158,7 +158,7 @@ class BlobHttpApi implements BlobFileApiInterface
 
         // TODO: replace by filter
         if ($prefix = ($options['prefix'] ?? null)) {
-            $parameters['prefix'] = rawurlencode($prefix);
+            $parameters['prefix'] = $prefix;
         }
         if ($options['startsWith'] ?? false) {
             $parameters['startsWith'] = '1';
@@ -211,10 +211,10 @@ class BlobHttpApi implements BlobFileApiInterface
 
         $parameters = [];
         if ($prefix = $blobFile->getPrefix()) {
-            $parameters['prefix'] = rawurlencode($prefix);
+            $parameters['prefix'] = $prefix;
         }
         if ($type = $blobFile->getType()) {
-            $parameters['type'] = rawurlencode($type);
+            $parameters['type'] = $type;
         }
         $url = $this->generateUrl($method, $parameters, $options);
 
@@ -267,8 +267,8 @@ class BlobHttpApi implements BlobFileApiInterface
     private function getQueryParameters(string $method, array $parameters = [], array $options = []): array
     {
         $queryParameters = $parameters;
-        $queryParameters['bucketIdentifier'] = rawurldecode($this->bucketIdentifier);
-        $queryParameters['creationTime'] = rawurldecode(date('c'));
+        $queryParameters['bucketIdentifier'] = $this->bucketIdentifier;
+        $queryParameters['creationTime'] = date('c');
         $queryParameters['method'] = $method;
 
         if (BlobApi::getIncludeDeleteAt($options)) {
@@ -350,7 +350,6 @@ class BlobHttpApi implements BlobFileApiInterface
             }
 
             try {
-                // Fetch a token
                 $response = $this->client->post(
                     $config['token_endpoint'], [
                         'auth' => [$this->clientIdentifier, $this->clientSecret],
