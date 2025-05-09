@@ -79,7 +79,7 @@ class BlobHttpApi implements BlobFileApiInterface
             throw new BlobApiError('add file: fileName is required', BlobApiError::REQUIRED_PARAMETER_MISSING);
         }
 
-        return $this->addOrUpdateFile($blobFile, $options);
+        return $this->addOrUpdateFile(true, $blobFile, $options);
     }
 
     /**
@@ -91,7 +91,7 @@ class BlobHttpApi implements BlobFileApiInterface
             throw new BlobApiError('update file: identifier is required', BlobApiError::REQUIRED_PARAMETER_MISSING);
         }
 
-        return $this->addOrUpdateFile($blobFile, $options);
+        return $this->addOrUpdateFile(false, $blobFile, $options);
     }
 
     /**
@@ -139,8 +139,14 @@ class BlobHttpApi implements BlobFileApiInterface
     public function getFile(string $identifier, array $options = []): BlobFile
     {
         try {
+            $url = $this->generateUrl('GET', [], $options, $identifier);
+            $requestOptions = [
+                RequestOptions::HEADERS => [
+                    'Accept' => 'application/ld+json',
+                ]];
+
             return $this->createBlobFileFromResponse(
-                $this->request('GET', $this->generateUrl('GET', [], $options, $identifier)));
+                $this->request('GET', $url, $requestOptions));
         } catch (\Throwable $exception) {
             throw BlobApiError::createFromRequestException($exception, 'Getting file failed');
         }
@@ -164,8 +170,14 @@ class BlobHttpApi implements BlobFileApiInterface
             $parameters['startsWith'] = '1';
         }
 
+        $url = $this->generateUrl('GET', $parameters, $options);
+        $requestOptions = [
+            RequestOptions::HEADERS => [
+                'Accept' => 'application/ld+json',
+            ]];
+
         try {
-            $response = $this->request('GET', $this->generateUrl('GET', $parameters, $options));
+            $response = $this->request('GET', $url, $requestOptions);
             try {
                 $responseDecoded =
                     json_decode($response->getBody()->getContents(), true, flags: JSON_THROW_ON_ERROR);
@@ -204,10 +216,9 @@ class BlobHttpApi implements BlobFileApiInterface
     /**
      * @throws BlobApiError
      */
-    private function addOrUpdateFile(BlobFile $blobFile, array $options = []): BlobFile
+    private function addOrUpdateFile(bool $isAdd, BlobFile $blobFile, array $options = []): BlobFile
     {
-        $isPost = $blobFile->getIdentifier() === null;
-        $method = $isPost ? 'POST' : 'PATCH';
+        $method = $isAdd ? 'POST' : 'PATCH';
 
         $parameters = [];
         if ($prefix = $blobFile->getPrefix()) {
@@ -216,7 +227,8 @@ class BlobHttpApi implements BlobFileApiInterface
         if ($type = $blobFile->getType()) {
             $parameters['type'] = $type;
         }
-        $url = $this->generateUrl($method, $parameters, $options);
+
+        $url = $this->generateUrl($method, $parameters, $options, $isAdd ? null : $blobFile->getIdentifier());
 
         $multipart = [];
         if ($blobFile->getFile()) {
@@ -246,20 +258,15 @@ class BlobHttpApi implements BlobFileApiInterface
             ];
         }
 
-        $requestOptions = [];
-        if (empty($multipart) === false) {
-            $requestOptions['multipart'] = $multipart;
-        }
-        $requestOptions['headers'][] = [
-            'Accept' => 'application/ld+json',
-            'HTTP_ACCEPT' => 'application/ld+json',
-            'Content-Type' => $isPost ? 'application/ld+json' : 'application/merge-patch+json',
+        $requestOptions = [
+            RequestOptions::HEADERS => ['Accept' => 'application/ld+json'],
+            RequestOptions::MULTIPART => $multipart,
         ];
 
         try {
             return $this->createBlobFileFromResponse($this->request($method, $url, $requestOptions));
         } catch (\Throwable $exception) {
-            throw BlobApiError::createFromRequestException($exception, $isPost ?
+            throw BlobApiError::createFromRequestException($exception, $isAdd ?
                 'Adding file failed' : 'Updating file failed');
         }
     }
@@ -328,7 +335,7 @@ class BlobHttpApi implements BlobFileApiInterface
     private function request(string $method, string $url, array $requestOptions = []): ResponseInterface
     {
         if ($this->oidcEnabled) {
-            $requestOptions['headers']['Authorization'] = 'Bearer '.$this->getOidcToken();
+            $requestOptions[RequestOptions::HEADERS]['Authorization'] = 'Bearer '.$this->getOidcToken();
         }
 
         return $this->client->request($method, $url, $requestOptions);
