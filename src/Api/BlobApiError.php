@@ -21,11 +21,6 @@ class BlobApiError extends \Exception
     public const INVALID_SIGNATURE = 'blob-library:invalid-signature';
     public const DEPENDENCY_ERROR = 'blob-library:missing-dependency';
 
-    private ?string $errorId = null;
-    private ?string $blobErrorId = null;
-    private array $blobErrorDetails = [];
-    private ?int $statusCode = null;
-
     public static function createFromRequestException(\Throwable $throwable, string $message): self
     {
         $blobErrorId = null;
@@ -51,14 +46,13 @@ class BlobApiError extends \Exception
         return new self($message, $errorId, $statusCode, $blobErrorId, $blobErrorDetails, $throwable);
     }
 
-    public function __construct(string $message, string $errorId, ?int $statusCode = null,
-        ?string $blobErrorId = null, array $blobErrorDetails = [], ?\Throwable $previous = null)
+    public function __construct(string $message,
+        private readonly string $errorId,
+        private readonly ?int $statusCode = null,
+        private readonly ?string $blobErrorId = null,
+        private readonly array $blobErrorDetails = [],
+        ?\Throwable $previous = null)
     {
-        $this->errorId = $errorId;
-        $this->statusCode = $statusCode;
-        $this->blobErrorId = $blobErrorId;
-        $this->blobErrorDetails = $blobErrorDetails;
-
         parent::__construct($message, previous: $previous);
     }
 

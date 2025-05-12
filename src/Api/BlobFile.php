@@ -86,6 +86,26 @@ class BlobFile
         return $this->fileData['fileName'] ?? null;
     }
 
+    public function getMimeType(): ?string
+    {
+        return $this->fileData['mimeType'] ?? null;
+    }
+
+    public function getFileSize(): ?int
+    {
+        return $this->fileData['fileSize'] ?? null;
+    }
+
+    public function getFileHash(): ?string
+    {
+        return $this->fileData['fileHash'] ?? null;
+    }
+
+    public function getMetadataHash(): ?string
+    {
+        return $this->fileData['metadataHash'] ?? null;
+    }
+
     public function setMetadata(string $metadata): void
     {
         $this->fileData['metadata'] = $metadata;
@@ -99,5 +119,30 @@ class BlobFile
     public function getContentUrl(): ?string
     {
         return $this->fileData['contentUrl'] ?? null;
+    }
+
+    public function getDateCreated(): ?string
+    {
+        return $this->fileData['dateCreated'] ?? null;
+    }
+
+    public function getDateModified(): ?string
+    {
+        return $this->fileData['dateModified'] ?? null;
+    }
+
+    public function getDateAccessed(): ?string
+    {
+        return $this->fileData['dateAccessed'] ?? null;
+    }
+
+    public function getDeleteAt(): ?string
+    {
+        return $this->fileData['deleteAt'] ?? null;
+    }
+
+    public function getNotifyEmail(): ?string
+    {
+        return $this->fileData['notifyEmail'] ?? null;
     }
 }

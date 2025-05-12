@@ -15,9 +15,9 @@ class BlobHttpApiTest extends BlobHttpApiTestBase
      */
     public function testCreateHttpModeConfig(): void
     {
-        $this->blobApi = BlobApi::createFromConfig(
-            BlobApi::createHttpModeConfig('test-bucket', 'key', 'https://blob.com/', true,
-                'https://auth.com/', 'client', 'secret'));
+        $this->blobApi =
+            BlobApi::createHttpModeApi('test-bucket', 'key', 'https://blob.com/', true,
+                'https://auth.com/', 'client', 'secret');
 
         $this->assertInstanceOf(BlobHttpApi::class, $this->blobApi->getBlobFileApiImpl());
     }

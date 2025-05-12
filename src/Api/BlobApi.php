@@ -58,11 +58,14 @@ class BlobApi implements BlobFileApiInterface
             BlobApiError::DEPENDENCY_ERROR);
     }
 
-    public static function createHttpModeConfig(string $bucketIdentifier,
+    /**
+     * @throws BlobApiError
+     */
+    public static function createHttpModeApi(string $bucketIdentifier,
         string $bucketKey, string $blobBaseUrl, bool $oidcEnabled = false,
-        ?string $oidcProviderUrl = null, ?string $oidcClientId = null, ?string $oidcClientSecret = null): array
+        ?string $oidcProviderUrl = null, ?string $oidcClientId = null, ?string $oidcClientSecret = null): BlobApi
     {
-        return [
+        return BlobApi::createFromConfig([
             'blob_library' => [
                 'bucket_identifier' => $bucketIdentifier,
                 'use_http_mode' => true,
@@ -75,19 +78,7 @@ class BlobApi implements BlobFileApiInterface
                     'oidc_client_secret' => $oidcClientSecret,
                 ],
             ],
-        ];
-    }
-
-    public static function createCustomBlobApiConfig(string $bucketIdentifier,
-        string $customBlobApiService = 'blob_php_api'): array
-    {
-        return [
-            'blob_library' => [
-                'bucket_identifier' => $bucketIdentifier,
-                'use_http_mode' => false,
-                'custom_blob_api_service' => $customBlobApiService,
-            ],
-        ];
+        ]);
     }
 
     /**
