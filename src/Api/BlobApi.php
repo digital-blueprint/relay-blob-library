@@ -8,6 +8,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 class BlobApi implements BlobFileApiInterface
 {
+    private const PREFIX_STARTS_WITH_OPTION = 'startsWith';
+    private const PREFIX_OPTION = 'prefix';
     private const INCLUDE_DELETE_AT_OPTION = 'include_delete_at';
     private const INCLUDE_DATA_OPTION = 'include_data';
     private const DELETE_IN_OPTION = 'delete_in';
@@ -157,6 +159,26 @@ class BlobApi implements BlobFileApiInterface
     public static function getDeleteIn(array $options): ?string
     {
         return $options[self::DELETE_IN_OPTION] ?? null;
+    }
+
+    public static function setPrefix(array &$options, string $prefix): void
+    {
+        $options[self::PREFIX_OPTION] = $prefix;
+    }
+
+    public static function getPrefix(array $options): ?string
+    {
+        return $options[self::PREFIX_OPTION] ?? null;
+    }
+
+    public static function setPrefixStartsWith(array &$options, bool $prefixStartsWith): void
+    {
+        $options[self::PREFIX_STARTS_WITH_OPTION] = $prefixStartsWith;
+    }
+
+    public static function getPrefixStartsWith(array $options): bool
+    {
+        return $options[self::PREFIX_STARTS_WITH_OPTION] ?? false;
     }
 
     public function __construct(BlobFileApiInterface $blobFileApiImpl)

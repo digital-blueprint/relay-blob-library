@@ -107,7 +107,6 @@ class BlobHttpApi implements BlobFileApiInterface
     }
 
     /**
-     * @throws GuzzleException
      * @throws BlobApiError
      */
     public function removeFiles(array $options = []): void
