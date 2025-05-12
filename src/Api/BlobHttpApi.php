@@ -280,7 +280,7 @@ class BlobHttpApi implements BlobFileApiInterface
         if (BlobApi::getIncludeDeleteAt($options)) {
             $queryParameters['includeDeleteAt'] = '1';
         }
-        if (BlobApi::getIncludeData($options)) {
+        if (BlobApi::getIncludeFileContents($options)) {
             $queryParameters['includeData'] = '1';
         }
         if ($deleteIn = BlobApi::getDeleteIn($options)) {

@@ -8,11 +8,21 @@ use Symfony\Component\HttpFoundation\Response;
 
 class BlobApi implements BlobFileApiInterface
 {
-    private const PREFIX_STARTS_WITH_OPTION = 'startsWith';
-    private const PREFIX_OPTION = 'prefix';
-    private const INCLUDE_DELETE_AT_OPTION = 'include_delete_at';
-    private const INCLUDE_DATA_OPTION = 'include_data';
-    private const DELETE_IN_OPTION = 'delete_in';
+    public const INCLUDE_DELETE_AT_OPTION = 'includeDeleteAt';
+    public const INCLUDE_FILE_CONTENTS_OPTION = 'includeData';
+
+    public const DELETE_IN_OPTION = 'deleteIn';
+    public const DISABLE_OUTPUT_VALIDATION = 'disableOutputValidation';
+
+    /**
+     * @deprecated
+     */
+    public const PREFIX_STARTS_WITH_OPTION = 'startsWith';
+
+    /**
+     * @deprecated
+     */
+    public const PREFIX_OPTION = 'prefix';
 
     private ?BlobFileApiInterface $blobFileApiImpl = null;
 
@@ -141,14 +151,14 @@ class BlobApi implements BlobFileApiInterface
         return $options[self::INCLUDE_DELETE_AT_OPTION] ?? false;
     }
 
-    public static function setIncludeData(array &$options, bool $includeData): void
+    public static function setIncludeFileContents(array &$options, bool $includeData): void
     {
-        $options[self::INCLUDE_DATA_OPTION] = $includeData;
+        $options[self::INCLUDE_FILE_CONTENTS_OPTION] = $includeData;
     }
 
-    public static function getIncludeData(array $options): bool
+    public static function getIncludeFileContents(array $options): bool
     {
-        return $options[self::INCLUDE_DATA_OPTION] ?? false;
+        return $options[self::INCLUDE_FILE_CONTENTS_OPTION] ?? false;
     }
 
     public static function setDeleteIn(array &$options, string $deleteIn): void
@@ -161,24 +171,46 @@ class BlobApi implements BlobFileApiInterface
         return $options[self::DELETE_IN_OPTION] ?? null;
     }
 
+    /**
+     * @deprecated
+     */
     public static function setPrefix(array &$options, string $prefix): void
     {
         $options[self::PREFIX_OPTION] = $prefix;
     }
 
+    /**
+     * @deprecated
+     */
     public static function getPrefix(array $options): ?string
     {
         return $options[self::PREFIX_OPTION] ?? null;
     }
 
+    /**
+     * @deprecated
+     */
     public static function setPrefixStartsWith(array &$options, bool $prefixStartsWith): void
     {
         $options[self::PREFIX_STARTS_WITH_OPTION] = $prefixStartsWith;
     }
 
+    /**
+     * @deprecated
+     */
     public static function getPrefixStartsWith(array $options): bool
     {
         return $options[self::PREFIX_STARTS_WITH_OPTION] ?? false;
+    }
+
+    public static function setDisableOutputValidation(array &$options, bool $disableOutputValidation): void
+    {
+        $options[self::DISABLE_OUTPUT_VALIDATION] = $disableOutputValidation;
+    }
+
+    public static function getDisableOutputValidation(array $options): bool
+    {
+        return $options[self::DISABLE_OUTPUT_VALIDATION] ?? false;
     }
 
     public function __construct(BlobFileApiInterface $blobFileApiImpl)

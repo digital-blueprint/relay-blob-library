@@ -48,7 +48,7 @@ class BlobHttpApiGetTest extends BlobHttpApiTestBase
         ]);
 
         $options = [];
-        BlobApi::setIncludeData($options, true);
+        BlobApi::setIncludeFileContents($options, true);
         $blobFile = $this->blobApi->getFile('1234', $options);
         $this->assertEquals('1234', $blobFile->getIdentifier());
         $this->assertEquals('some_url', $blobFile->getContentUrl());
