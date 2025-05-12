@@ -12,7 +12,7 @@ class BlobApi implements BlobFileApiInterface
     public const INCLUDE_FILE_CONTENTS_OPTION = 'includeData';
 
     public const DELETE_IN_OPTION = 'deleteIn';
-    public const DISABLE_OUTPUT_VALIDATION = 'disableOutputValidation';
+    public const DISABLE_OUTPUT_VALIDATION_OPTION = 'disableOutputValidation';
 
     /**
      * @deprecated
@@ -205,12 +205,12 @@ class BlobApi implements BlobFileApiInterface
 
     public static function setDisableOutputValidation(array &$options, bool $disableOutputValidation): void
     {
-        $options[self::DISABLE_OUTPUT_VALIDATION] = $disableOutputValidation;
+        $options[self::DISABLE_OUTPUT_VALIDATION_OPTION] = $disableOutputValidation;
     }
 
     public static function getDisableOutputValidation(array $options): bool
     {
-        return $options[self::DISABLE_OUTPUT_VALIDATION] ?? false;
+        return $options[self::DISABLE_OUTPUT_VALIDATION_OPTION] ?? false;
     }
 
     public function __construct(BlobFileApiInterface $blobFileApiImpl)
