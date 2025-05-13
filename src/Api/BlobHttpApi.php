@@ -67,6 +67,11 @@ class BlobHttpApi implements BlobFileApiInterface
         $this->bucketIdentifier = $bucketIdentifier;
     }
 
+    public function setBlobBaseUrl(string $blobBaseUrl): void
+    {
+        $this->blobBaseUrl = $blobBaseUrl;
+    }
+
     /**
      * @throws BlobApiError
      */

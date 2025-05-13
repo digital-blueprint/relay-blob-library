@@ -10,6 +10,8 @@ interface BlobFileApiInterface
 {
     public function setBucketIdentifier(string $bucketIdentifier): void;
 
+    public function setBlobBaseUrl(string $blobBaseUrl): void;
+
     /**
      * @throws BlobApiError
      */

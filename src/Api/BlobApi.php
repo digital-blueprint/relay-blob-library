@@ -38,8 +38,8 @@ class BlobApi implements BlobFileApiInterface
                         ->defaultTrue()
                     ->end()
                     ->scalarNode('custom_blob_api_service')
-                        ->description('The fully qualified name or alias of the service to use as custom Blob API implementation.')
-                        ->defaultValue('blob_php_api')
+                        ->description('The fully qualified name or alias of the service to use as custom Blob API implementation. Default is the PHP Blob File API, which comes with the Relay Blob bundle and talks to Blob directly over PHP.')
+                        ->defaultValue('dbp.relay.blob.file_api')
                     ->end()
                     ->scalarNode('bucket_identifier')
                        ->description('The identifier of the Blob bucket')
@@ -91,6 +91,13 @@ class BlobApi implements BlobFileApiInterface
                 ],
             ],
         ]);
+    }
+
+    public static function createFromBlobFileApi(string $bucketIdentifier, BlobFileApiInterface $blobFileApi): BlobApi
+    {
+        $blobFileApi->setBucketIdentifier($bucketIdentifier);
+
+        return new BlobApi($blobFileApi);
     }
 
     /**
@@ -213,7 +220,7 @@ class BlobApi implements BlobFileApiInterface
         return $options[self::DISABLE_OUTPUT_VALIDATION_OPTION] ?? false;
     }
 
-    public function __construct(BlobFileApiInterface $blobFileApiImpl)
+    protected function __construct(BlobFileApiInterface $blobFileApiImpl)
     {
         $this->blobFileApiImpl = $blobFileApiImpl;
     }
@@ -226,6 +233,11 @@ class BlobApi implements BlobFileApiInterface
     public function setBucketIdentifier(string $bucketIdentifier): void
     {
         $this->blobFileApiImpl->setBucketIdentifier($bucketIdentifier);
+    }
+
+    public function setBlobBaseUrl(string $blobBaseUrl): void
+    {
+        $this->blobFileApiImpl->setBlobBaseUrl($blobBaseUrl);
     }
 
     /**
