@@ -7,13 +7,14 @@ namespace Dbp\Relay\BlobLibrary\Tests;
 use Dbp\Relay\BlobLibrary\Api\BlobApiError;
 use Dbp\Relay\BlobLibrary\Api\BlobFile;
 use GuzzleHttp\Psr7\Response;
+use GuzzleHttp\Psr7\Utils;
 
 class BlobHttpApiAddTest extends BlobHttpApiTestBase
 {
     /**
      * @throws BlobApiError
      */
-    public function testAddFileSuccess(): void
+    public function testAddFileStringSuccess(): void
     {
         $this->createMockClient([
             new Response(200, [], '{"identifier":"1234"}'),
@@ -31,7 +32,7 @@ class BlobHttpApiAddTest extends BlobHttpApiTestBase
     /**
      * @throws BlobApiError
      */
-    public function testAddFileStreamSuccess(): void
+    public function testAddFileResourceSuccess(): void
     {
         $this->createMockClient([
             new Response(200, [], '{"identifier":"1234"}'),
@@ -41,6 +42,36 @@ class BlobHttpApiAddTest extends BlobHttpApiTestBase
         $blobFile->setPrefix('prefix');
         $blobFile->setFileName('test.txt');
         $blobFile->setFile(fopen(__DIR__.'/test.txt', 'r'));
+
+        $blobFile = $this->blobApi->addFile($blobFile);
+        $this->assertEquals('1234', $blobFile->getIdentifier());
+    }
+
+    public function testAddFileSplFileInfoSuccess(): void
+    {
+        $this->createMockClient([
+            new Response(200, [], '{"identifier":"1234"}'),
+        ]);
+
+        $blobFile = new BlobFile();
+        $blobFile->setPrefix('prefix');
+        $blobFile->setFileName('test.txt');
+        $blobFile->setFile(new \SplFileInfo(__DIR__.'/test.txt'));
+
+        $blobFile = $this->blobApi->addFile($blobFile);
+        $this->assertEquals('1234', $blobFile->getIdentifier());
+    }
+
+    public function testAddFileStreamInterfaceSuccess(): void
+    {
+        $this->createMockClient([
+            new Response(200, [], '{"identifier":"1234"}'),
+        ]);
+
+        $blobFile = new BlobFile();
+        $blobFile->setPrefix('prefix');
+        $blobFile->setFileName('test.txt');
+        $blobFile->setFile(Utils::streamFor(fopen(__DIR__.'/test.txt', 'r')));
 
         $blobFile = $this->blobApi->addFile($blobFile);
         $this->assertEquals('1234', $blobFile->getIdentifier());

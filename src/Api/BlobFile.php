@@ -8,28 +8,25 @@ use Psr\Http\Message\StreamInterface;
 
 class BlobFile
 {
-    /** @var StreamInterface|resource|string|null */
-    private mixed $file = null;
-    private array $fileData = [];
-
     /**
-     * @param StreamInterface|resource|string|null $file
+     * @param \SplFileInfo|StreamInterface|resource|string|null $file
      */
     public function __construct(
-        array $fileData = [],
-        mixed $file = null,
+        private array $fileData = [],
+        private mixed $file = null,
     ) {
-        $this->file = $file;
-        $this->fileData = $fileData;
     }
 
+    /**
+     * @return \SplFileInfo|StreamInterface|resource|string|null
+     */
     public function getFile(): mixed
     {
         return $this->file;
     }
 
     /**
-     * @param StreamInterface|resource|string|null $file
+     * @param \SplFileInfo|StreamInterface|resource|string|null $file
      */
     public function setFile(mixed $file): void
     {

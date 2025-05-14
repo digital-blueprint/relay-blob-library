@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\BlobLibrary\Api;
 
+use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
+use Symfony\Component\Config\Definition\Builder\TreeBuilder;
+use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\HttpFoundation\Response;
 
 class BlobApi implements BlobFileApiInterface
@@ -24,50 +27,58 @@ class BlobApi implements BlobFileApiInterface
      */
     public const PREFIX_OPTION = 'prefix';
 
-    private ?BlobFileApiInterface $blobFileApiImpl = null;
+    private BlobFileApiInterface $blobFileApiImpl;
 
-    public static function getConfigNodeDefinition(): object
+    public static function getConfigNodeDefinition(): ArrayNodeDefinition
     {
-        if (class_exists('Symfony\Component\Config\Definition\Builder\TreeBuilder')) {
-            $treeBuilder = new \Symfony\Component\Config\Definition\Builder\TreeBuilder('blob_library');
-            $rootNode = $treeBuilder->getRootNode();
-            $rootNode
-                ->children()
-                    ->scalarNode('use_http_mode')
-                        ->description('Whether to use the HTTP mode, i.e. the Blob HTTP (REST) API. If false, a custom Blob API implementation will be used.')
-                        ->defaultTrue()
-                    ->end()
-                    ->scalarNode('custom_blob_api_service')
-                        ->description('The fully qualified name or alias of the service to use as custom Blob API implementation. Default is the PHP Blob File API, which comes with the Relay Blob bundle and talks to Blob directly over PHP.')
-                        ->defaultValue('dbp.relay.blob.file_api')
-                    ->end()
-                    ->scalarNode('bucket_identifier')
-                       ->description('The identifier of the Blob bucket')
-                       ->isRequired()
-                       ->cannotBeEmpty()
-                    ->end()
-                    ->arrayNode('http_mode')
+        $treeBuilder = new TreeBuilder('blob_library');
+        /** @var ArrayNodeDefinition $rootNode */
+        $rootNode = $treeBuilder->getRootNode();
+        $rootNode
+            ->children()
+                ->scalarNode('use_http_mode')
+                    ->info('Whether to use the HTTP mode, i.e. the Blob HTTP (REST) API. If false, a custom Blob API implementation will be used.')
+                    ->defaultTrue()
+                ->end()
+                ->scalarNode('custom_blob_api_service')
+                    ->info('The fully qualified name or alias of the service to use as custom Blob API implementation. Default is the PHP Blob File API, which comes with the Relay Blob bundle and talks to Blob directly over PHP.')
+                    ->defaultValue('dbp.relay.blob.file_api')
+                ->end()
+                ->scalarNode('bucket_identifier')
+                    ->info('The identifier of the Blob bucket')
+                    ->isRequired()
+                    ->cannotBeEmpty()
+                ->end()
+                ->arrayNode('http_mode')
+                    ->children()
                         ->scalarNode('bucket_key')
-                            ->description('The signature key of the Blob bucket. Required for HTTP mode.')
+                        ->info('The signature key of the Blob bucket. Required for HTTP mode.')
                         ->end()
                         ->scalarNode('base_url')
-                           ->description('The base URL of the HTTP Blob API. Required for HTTP mode.')
+                        ->info('The base URL of the HTTP Blob API. Required for HTTP mode.')
                         ->end()
-                        ->scalarNode('oidc_enabled. Whether to use OpenID connect authentication. Optional for HTTP mode.')
-                            ->defaultTrue()
+                        ->scalarNode('oidc_enabled')
+                        ->info('Whether to use OpenID connect authentication. Optional for HTTP mode.')
+                        ->defaultTrue()
                         ->end()
-                        ->scalarNode('oidc_provider_url. Required for HTTP mode when oidc_enabled is true.')
-                        ->scalarNode('oidc_client_id. Required for HTTP mode when oidc_enabled is true.')
+                        ->scalarNode('oidc_provider_url')
+                        ->info('Required for HTTP mode when oidc_enabled is true.')
                         ->end()
-                        ->scalarNode('oidc_client_secret. Required for HTTP mode when oidc_enabled is true.')
+                        ->scalarNode('oidc_client_id')
+                        ->info('Required for HTTP mode when oidc_enabled is true.')
+                        ->end()
+                        ->scalarNode('oidc_client_secret')
+                        ->info('Required for HTTP mode when oidc_enabled is true.')
+                        ->end()
+                        ->scalarNode('send_checksums')
+                        ->info('Whether to send file content and metadata checksums for Blob to check')
+                        ->defaultTrue()
                         ->end()
                     ->end()
-                ->end();
+                ->end()
+            ->end();
 
-            return $rootNode;
-        }
-        throw new BlobApiError('\Symfony\Component\Config\Definition\Builder\TreeBuilder must be declared to use '.__METHOD__,
-            BlobApiError::DEPENDENCY_ERROR);
+        return $rootNode;
     }
 
     /**
@@ -75,7 +86,8 @@ class BlobApi implements BlobFileApiInterface
      */
     public static function createHttpModeApi(string $bucketIdentifier,
         string $bucketKey, string $blobBaseUrl, bool $oidcEnabled = false,
-        ?string $oidcProviderUrl = null, ?string $oidcClientId = null, ?string $oidcClientSecret = null): BlobApi
+        ?string $oidcProviderUrl = null, ?string $oidcClientId = null, ?string $oidcClientSecret = null,
+        bool $sendChecksums = true): BlobApi
     {
         return BlobApi::createFromConfig([
             'blob_library' => [
@@ -88,6 +100,7 @@ class BlobApi implements BlobFileApiInterface
                     'oidc_provider_url' => $oidcProviderUrl,
                     'oidc_client_id' => $oidcClientId,
                     'oidc_client_secret' => $oidcClientSecret,
+                    'send_checksums' => $sendChecksums,
                 ],
             ],
         ]);
@@ -103,7 +116,7 @@ class BlobApi implements BlobFileApiInterface
     /**
      * @throws BlobApiError
      */
-    public static function createFromConfig(array $config, ?object $container = null): BlobApi
+    public static function createFromConfig(array $config, ?Container $container = null): BlobApi
     {
         $bucketIdentifier = $config['blob_library']['bucket_identifier'] ?? null;
         if ($bucketIdentifier === null) {
@@ -126,10 +139,7 @@ class BlobApi implements BlobFileApiInterface
                 throw new BlobApiError('Container is required when \'use_http_mode\' is true',
                     BlobApiError::CONFIGURATION_INVALID);
             }
-            //            if (get_class($container) !== '\Symfony\Component\DependencyInjection\Container') {
-            //                throw new BlobApiError('parameter \'container\' must of of type \'\Symfony\Component\DependencyInjection\Container\'',
-            //                    BlobApiError::DEPENDENCY_ERROR);
-            //            }
+
             try {
                 $blobFileApiImpl = $container->get($customBlobApiService);
             } catch (\Throwable $exception) {
@@ -235,16 +245,18 @@ class BlobApi implements BlobFileApiInterface
         $this->blobFileApiImpl->setBucketIdentifier($bucketIdentifier);
     }
 
-    public function setBlobBaseUrl(string $blobBaseUrl): void
-    {
-        $this->blobFileApiImpl->setBlobBaseUrl($blobBaseUrl);
-    }
-
     /**
      * @throws BlobApiError
      */
     public function addFile(BlobFile $blobFile, array $options = []): BlobFile
     {
+        if ($blobFile->getFile() === null) {
+            throw new BlobApiError('add file: file is required', BlobApiError::REQUIRED_PARAMETER_MISSING);
+        }
+        if ($blobFile->getFileName() === null) {
+            throw new BlobApiError('add file: fileName is required', BlobApiError::REQUIRED_PARAMETER_MISSING);
+        }
+
         return $this->blobFileApiImpl->addFile($blobFile, $options);
     }
 

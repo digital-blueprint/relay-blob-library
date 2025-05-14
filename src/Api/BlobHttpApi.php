@@ -7,6 +7,7 @@ namespace Dbp\Relay\BlobLibrary\Api;
 use Dbp\Relay\BlobLibrary\Helpers\SignatureTools;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Psr7\Utils;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,6 +23,7 @@ class BlobHttpApi implements BlobFileApiInterface
     private ?string $openIdProviderUrl = null;
     private ?string $clientIdentifier = null;
     private ?string $clientSecret = null;
+    private bool $sendChecksums = true;
     private ?string $token = null;
     private int $timeTokenExpires = 0;
 
@@ -42,7 +44,7 @@ class BlobHttpApi implements BlobFileApiInterface
                 BlobApiError::CONFIGURATION_INVALID);
         }
 
-        $this->oidcEnabled = $config['oidc_enabled'] ?? true;
+        $this->oidcEnabled = $config['oidc_enabled'] ?? false;
         $this->openIdProviderUrl = $config['oidc_provider_url'] ?? null;
         $this->clientIdentifier = $config['oidc_client_id'] ?? null;
         $this->clientSecret = $config['oidc_client_secret'] ?? null;
@@ -50,6 +52,7 @@ class BlobHttpApi implements BlobFileApiInterface
             && ($this->openIdProviderUrl === null || $this->clientIdentifier === null || $this->clientSecret === null)) {
             throw new BlobApiError('oidc config is invalid', BlobApiError::CONFIGURATION_INVALID);
         }
+        $this->sendChecksums = $config['send_checksums'] ?? true;
 
         $this->token = null;
         $this->timeTokenExpires = 0;
@@ -67,23 +70,11 @@ class BlobHttpApi implements BlobFileApiInterface
         $this->bucketIdentifier = $bucketIdentifier;
     }
 
-    public function setBlobBaseUrl(string $blobBaseUrl): void
-    {
-        $this->blobBaseUrl = $blobBaseUrl;
-    }
-
     /**
      * @throws BlobApiError
      */
     public function addFile(BlobFile $blobFile, array $options = []): BlobFile
     {
-        if ($blobFile->getFile() === null) {
-            throw new BlobApiError('add file: file is required', BlobApiError::REQUIRED_PARAMETER_MISSING);
-        }
-        if ($blobFile->getFileName() === null) {
-            throw new BlobApiError('add file: fileName is required', BlobApiError::REQUIRED_PARAMETER_MISSING);
-        }
-
         return $this->addOrUpdateFile(true, $blobFile, $options);
     }
 
@@ -231,35 +222,49 @@ class BlobHttpApi implements BlobFileApiInterface
         if ($type = $blobFile->getType()) {
             $parameters['type'] = $type;
         }
+        if ($notifyEmail = $blobFile->getNotifyEmail()) {
+            $parameters['notifyEmail'] = $notifyEmail;
+        }
 
         $url = $this->generateUrl($method, $parameters, $options, $isAdd ? null : $blobFile->getIdentifier());
 
         $multipart = [];
-        if ($blobFile->getFile()) {
+
+        if ($file = $blobFile->getFile()) {
+            if ($file instanceof \SplFileInfo) {
+                $file = Utils::streamFor(fopen($file->getRealPath(), 'r'));
+            }
             $multipart[] = [
                 'name' => 'file',
-                'contents' => $blobFile->getFile(),
+                'contents' => $file,
                 'filename' => $blobFile->getFileName() ?? '',
             ];
-            // TODO: hash stream as well?
-            if (is_string($blobFile->getFile())) {
+            if ($this->sendChecksums) {
                 $multipart[] = [
                     'name' => 'fileHash',
-                    'contents' => SignatureTools::generateSha256Checksum($blobFile->getFile()),
+                    'contents' => SignatureTools::generateSha256Checksum($file),
                 ];
             }
         }
+
         if ($fileName = $blobFile->getFileName()) {
             $multipart[] = [
                 'name' => 'fileName',
                 'contents' => $fileName,
             ];
         }
+
         if ($metadata = $blobFile->getMetadata()) {
             $multipart[] = [
                 'name' => 'metadata',
                 'contents' => $metadata,
             ];
+            if ($this->sendChecksums) {
+                $multipart[] = [
+                    'name' => 'metadataHash',
+                    'contents' => SignatureTools::generateSha256Checksum($metadata),
+                ];
+            }
         }
 
         $requestOptions = [
