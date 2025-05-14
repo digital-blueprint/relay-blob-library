@@ -83,9 +83,19 @@ class BlobFile
         return $this->fileData['fileName'] ?? null;
     }
 
+    public function setMimeType(?string $mimeType): void
+    {
+        $this->fileData['mimeType'] = $mimeType;
+    }
+
     public function getMimeType(): ?string
     {
         return $this->fileData['mimeType'] ?? null;
+    }
+
+    public function setFileSize(?int $fileSize): void
+    {
+        $this->fileData['fileSize'] = $fileSize;
     }
 
     public function getFileSize(): ?int
@@ -93,9 +103,19 @@ class BlobFile
         return $this->fileData['fileSize'] ?? null;
     }
 
+    public function setFileHash(?string $fileHash): void
+    {
+        $this->fileData['fileHash'] = $fileHash;
+    }
+
     public function getFileHash(): ?string
     {
         return $this->fileData['fileHash'] ?? null;
+    }
+
+    public function setMetadataHash(?string $metadataHash): void
+    {
+        $this->fileData['metadataHash'] = $metadataHash;
     }
 
     public function getMetadataHash(): ?string
@@ -113,9 +133,19 @@ class BlobFile
         return $this->fileData['metadata'] ?? null;
     }
 
+    public function setContentUrl(?string $contentUrl): void
+    {
+        $this->fileData['contentUrl'] = $contentUrl;
+    }
+
     public function getContentUrl(): ?string
     {
         return $this->fileData['contentUrl'] ?? null;
+    }
+
+    public function setDateCreated(?string $dateCreated): void
+    {
+        $this->fileData['dateCreated'] = $dateCreated;
     }
 
     public function getDateCreated(): ?string
@@ -123,9 +153,19 @@ class BlobFile
         return $this->fileData['dateCreated'] ?? null;
     }
 
+    public function setDateModified(?string $dateModified): void
+    {
+        $this->fileData['dateModified'] = $dateModified;
+    }
+
     public function getDateModified(): ?string
     {
         return $this->fileData['dateModified'] ?? null;
+    }
+
+    public function setDateAccessed(?string $dateAccessed): void
+    {
+        $this->fileData['dateAccessed'] = $dateAccessed;
     }
 
     public function getDateAccessed(): ?string
@@ -133,9 +173,19 @@ class BlobFile
         return $this->fileData['dateAccessed'] ?? null;
     }
 
+    public function setDeleteAt(?string $deleteAt): void
+    {
+        $this->fileData['deleteAt'] = $deleteAt;
+    }
+
     public function getDeleteAt(): ?string
     {
         return $this->fileData['deleteAt'] ?? null;
+    }
+
+    public function setNotifyEmail(?string $notifyEmail): void
+    {
+        $this->fileData['notifyEmail'] = $notifyEmail;
     }
 
     public function getNotifyEmail(): ?string
