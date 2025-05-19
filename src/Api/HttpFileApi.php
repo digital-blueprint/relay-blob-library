@@ -13,7 +13,7 @@ use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-class BlobHttpApi implements BlobFileApiInterface
+class HttpFileApi implements BlobFileApiInterface
 {
     private Client $client;
     private ?string $bucketKey = null;

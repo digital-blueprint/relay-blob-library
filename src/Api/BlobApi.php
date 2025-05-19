@@ -11,6 +11,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 class BlobApi implements BlobFileApiInterface
 {
+    public const DBP_RELAY_BLOB_FILE_API_SERVICE_ALIAS = 'dbp.relay.blob.file_api';
+
     public const INCLUDE_DELETE_AT_OPTION = 'includeDeleteAt';
     public const INCLUDE_FILE_CONTENTS_OPTION = 'includeData';
 
@@ -40,9 +42,9 @@ class BlobApi implements BlobFileApiInterface
                     ->info('Whether to use the HTTP mode, i.e. the Blob HTTP (REST) API. If false, a custom Blob API implementation will be used.')
                     ->defaultTrue()
                 ->end()
-                ->scalarNode('custom_blob_api_service')
+                ->scalarNode('custom_file_api_service')
                     ->info('The fully qualified name or alias of the service to use as custom Blob API implementation. Default is the PHP Blob File API, which comes with the Relay Blob bundle and talks to Blob directly over PHP.')
-                    ->defaultValue('dbp.relay.blob.file_api')
+                    ->defaultValue(self::DBP_RELAY_BLOB_FILE_API_SERVICE_ALIAS)
                 ->end()
                 ->scalarNode('bucket_identifier')
                     ->info('The identifier of the Blob bucket')
@@ -113,6 +115,18 @@ class BlobApi implements BlobFileApiInterface
         return new BlobApi($blobFileApi);
     }
 
+    public static function getCustomModeConfig(string $bucketIdentifier,
+        string $customBlobApiServiceOrAlias = BlobApi::DBP_RELAY_BLOB_FILE_API_SERVICE_ALIAS): array
+    {
+        return [
+            'blob_library' => [
+                'bucket_identifier' => $bucketIdentifier,
+                'use_http_mode' => false,
+                'custom_file_api_service' => $customBlobApiServiceOrAlias,
+            ],
+        ];
+    }
+
     /**
      * @throws BlobApiError
      */
@@ -126,13 +140,13 @@ class BlobApi implements BlobFileApiInterface
 
         $useHttpMode = $config['blob_library']['use_http_mode'] ?? true;
         if ($useHttpMode) {
-            $blobFileApiImpl = new BlobHttpApi();
+            $blobFileApiImpl = new HttpFileApi();
             $blobFileApiImpl->setConfig($config['blob_library']['http_mode'] ?? []);
         } else {
-            $customBlobApiService = $config['blob_library']['custom_blob_api_service'] ?? null;
+            $customBlobApiService = $config['blob_library']['custom_file_api_service'] ?? null;
             if ($customBlobApiService === null) {
                 throw new BlobApiError(
-                    'blob_library config is invalid: custom_blob_api_service is required when \'use_http_mode\' is false',
+                    'blob_library config is invalid: custom_file_api_service is required when \'use_http_mode\' is false',
                     BlobApiError::CONFIGURATION_INVALID);
             }
             if ($container === null) {

@@ -6,7 +6,7 @@ namespace Dbp\Relay\BlobLibrary\Tests;
 
 use Dbp\Relay\BlobLibrary\Api\BlobApi;
 use Dbp\Relay\BlobLibrary\Api\BlobApiError;
-use Dbp\Relay\BlobLibrary\Api\BlobHttpApi;
+use Dbp\Relay\BlobLibrary\Api\HttpFileApi;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
@@ -51,7 +51,7 @@ class BlobHttpApiTestBase extends TestCase
         $client = new Client(['handler' => $handlerStack]);
 
         $blobFileApiImpl = $this->blobApi->getBlobFileApiImpl();
-        assert($blobFileApiImpl instanceof BlobHttpApi);
+        assert($blobFileApiImpl instanceof HttpFileApi);
         $blobFileApiImpl->setClient($client);
     }
 }

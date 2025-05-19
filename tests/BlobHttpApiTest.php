@@ -6,7 +6,7 @@ namespace Dbp\Relay\BlobLibrary\Tests;
 
 use Dbp\Relay\BlobLibrary\Api\BlobApi;
 use Dbp\Relay\BlobLibrary\Api\BlobApiError;
-use Dbp\Relay\BlobLibrary\Api\BlobHttpApi;
+use Dbp\Relay\BlobLibrary\Api\HttpFileApi;
 
 class BlobHttpApiTest extends BlobHttpApiTestBase
 {
@@ -19,6 +19,6 @@ class BlobHttpApiTest extends BlobHttpApiTestBase
             BlobApi::createHttpModeApi('test-bucket', 'key', 'https://blob.com/', true,
                 'https://auth.com/', 'client', 'secret');
 
-        $this->assertInstanceOf(BlobHttpApi::class, $this->blobApi->getBlobFileApiImpl());
+        $this->assertInstanceOf(HttpFileApi::class, $this->blobApi->getBlobFileApiImpl());
     }
 }

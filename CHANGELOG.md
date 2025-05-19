@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-* Complete re-make of blob library
+* Complete re-make of the blob library
 * Add support for custom Blob File API implementations. This will allow injecting the Blob PHP API which talks to the blob
 bundle directly.
 
