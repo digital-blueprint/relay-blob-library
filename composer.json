@@ -1,6 +1,6 @@
 {
   "name": "dbp/relay-blob-library",
-  "description": "PHP helper library for interaction with the relay-blob-bundle.",
+  "description": "PHP helper library for interaction with the dbp/relay-blob-bundle.",
   "type": "library",
   "license": "AGPL-3.0-or-later",
   "require": {

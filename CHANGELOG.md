@@ -2,16 +2,21 @@
 
 ## Unreleased
 
-* Complete re-make of the blob library
-* Add support for custom Blob File API implementations. This will allow injecting the Blob PHP API which talks to the blob
-bundle directly.
+- Complete re-make of the blob library. The actual Blob API access is now wrapped in a BlobFileApiInterface implementation,
+where the library provides a built-in HTTP access implementation.
+- Add support for custom Blob File API implementations. This allows injecting the `dbp.relay.blob.file_api` service defined 
+in the dbp/relay-blob-bundle and talks to Blob directly (via PHP).
+- Provide a Symfony config definition tree for integration into the Symfony bundle config
+- Make use of authentication (oidc) configurable
+- Make sending of file content/metadata checksums configurable
+- Add unit tests; also test requests
 
 ## 0.2.14
 
-* Dropped support for PHP 8.1
-* Dropped support for Psalm
-* Added support for web-token/jwt-library v4
-* Various dependency fixes
+- Dropped support for PHP 8.1
+- Dropped support for Psalm
+- Added support for web-token/jwt-library v4
+- Various dependency fixes
 
 ## 0.2.13
 - Rename `retentionDuration` to `deleteIn` to conform with the newest blob version

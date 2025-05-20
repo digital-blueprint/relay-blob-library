@@ -75,6 +75,28 @@ class BlobHttpApiGetTest extends BlobHttpApiTestBase
         ]);
     }
 
+    /**
+     * @throws BlobApiError
+     */
+    public function testGetFileIncludeDeleteAtSuccess(): void
+    {
+        $requestHistory = [];
+        $this->createMockClient([
+            new Response(200, [], '{"identifier":"1234"}'),
+        ], $requestHistory);
+
+        $options = [];
+        BlobApi::setIncludeDeleteAt($options, true);
+        $blobFile = $this->blobApi->getFile('1234', $options);
+        $this->assertEquals('1234', $blobFile->getIdentifier());
+
+        $request = $requestHistory[0]['request'];
+        assert($request instanceof Request);
+        $this->validateRequest($request, 'GET', '1234', extraQueryParams: [
+            'includeDeleteAt' => '1',
+        ]);
+    }
+
     public function testGetFileForbidden(): void
     {
         $this->createMockClient([
