@@ -32,6 +32,28 @@ class BlobHttpApiGetTest extends BlobHttpApiTestBase
     /**
      * @throws BlobApiError
      */
+    public function testGetFileSuccessAuthenticated(): void
+    {
+        $this->createWithAuthentication();
+
+        $requestHistory = [];
+        $this->createMockClient([
+            new Response(201, [], '{"token_endpoint": "https://example.com/get_token"}'),
+            new Response(201, [], '{"access_token": "foobar", "expires_in": 3600}'),
+            new Response(200, [], '{"identifier":"1234"}'),
+        ], $requestHistory);
+
+        $blobFile = $this->blobApi->getFile('1234');
+        $this->assertEquals('1234', $blobFile->getIdentifier());
+
+        $request = $requestHistory[2]['request'];
+        assert($request instanceof Request);
+        $this->validateRequest($request, 'GET', '1234');
+    }
+
+    /**
+     * @throws BlobApiError
+     */
     public function testGetFilesSuccess(): void
     {
         $requestHistory = [];
@@ -45,6 +67,33 @@ class BlobHttpApiGetTest extends BlobHttpApiTestBase
         $this->assertEquals('1235', $blobFiles[1]->getIdentifier());
 
         $request = $requestHistory[0]['request'];
+        assert($request instanceof Request);
+        $this->validateRequest($request, 'GET', extraQueryParams: [
+            'page' => '1',
+            'perPage' => '30',
+        ]);
+    }
+
+    /**
+     * @throws BlobApiError
+     */
+    public function testGetFilesSuccessAuthenticated(): void
+    {
+        $this->createWithAuthentication();
+
+        $requestHistory = [];
+        $this->createMockClient([
+            new Response(201, [], '{"token_endpoint": "https://example.com/get_token"}'),
+            new Response(201, [], '{"access_token": "foobar", "expires_in": 3600}'),
+            new Response(200, body: '{"hydra:member": [{"identifier":"1234"},{"identifier":"1235"}]}'),
+        ], $requestHistory);
+
+        $blobFiles = $this->blobApi->getFiles();
+        $this->assertCount(2, $blobFiles);
+        $this->assertEquals('1234', $blobFiles[0]->getIdentifier());
+        $this->assertEquals('1235', $blobFiles[1]->getIdentifier());
+
+        $request = $requestHistory[2]['request'];
         assert($request instanceof Request);
         $this->validateRequest($request, 'GET', extraQueryParams: [
             'page' => '1',
@@ -189,6 +238,34 @@ class BlobHttpApiGetTest extends BlobHttpApiTestBase
         $this->assertEquals($content, $actualContent);
 
         $request = $requestHistory[0]['request'];
+        assert($request instanceof Request);
+        $this->validateRequest($request, 'GET', '1234', 'download');
+    }
+
+    /**
+     * @throws BlobApiError
+     */
+    public function testGetFileResponseSuccessAuthenticated(): void
+    {
+        $this->createWithAuthentication();
+
+        $requestHistory = [];
+        $content = 'this is a data stream';
+        $this->createMockClient([
+            new Response(201, [], '{"token_endpoint": "https://example.com/get_token"}'),
+            new Response(201, [], '{"access_token": "foobar", "expires_in": 3600}'),
+            new Response(200, headers: [
+                'Content-Type' => 'text/plain',
+                'Content-Length' => (string) strlen($content),
+            ], body: $content),
+        ], $requestHistory);
+
+        ob_start();
+        $this->blobApi->getFileResponse('1234')->sendContent();
+        $actualContent = ob_get_clean();
+        $this->assertEquals($content, $actualContent);
+
+        $request = $requestHistory[2]['request'];
         assert($request instanceof Request);
         $this->validateRequest($request, 'GET', '1234', 'download');
     }

@@ -197,7 +197,7 @@ class HttpFileApi implements BlobFileApiInterface
 
         return new StreamedResponse(function () use ($url) {
             try {
-                $response = $this->client->request('GET', $url, [RequestOptions::STREAM => true]);
+                $response = $this->request('GET', $url, [RequestOptions::STREAM => true]);
             } catch (\Throwable $exception) {
                 throw BlobApiError::createFromRequestException($exception, 'Downloading file failed');
             }

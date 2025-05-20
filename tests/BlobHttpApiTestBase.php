@@ -19,8 +19,20 @@ class BlobHttpApiTestBase extends TestCase
 {
     protected const BLOB_BASE_URL = 'https://blob.com';
     protected const BUCKET_IDENTIFIER = 'test-bucket';
-    protected const BUCKET_KEY = 'NN2fRdPQAjJvLe9w3SjzkW85ZMisGMyCTQsMhZrn68xJ9NwsXt';
+    protected const BUCKET_KEY = 'b3fc39dc89a4106a9c529555067722729f3b52c88dfd071bc9fed61345e62eb3';
     protected ?BlobApi $blobApi = null;
+
+    protected const TEST_CONFIG = [
+        'blob_library' => [
+            'use_http_mode' => true,
+            'bucket_identifier' => self::BUCKET_IDENTIFIER,
+            'http_mode' => [
+                'bucket_key' => self::BUCKET_KEY,
+                'blob_base_url' => self::BLOB_BASE_URL,
+                'oidc_enabled' => false,
+            ],
+        ],
+    ];
 
     /**
      * @throws BlobApiError
@@ -29,19 +41,25 @@ class BlobHttpApiTestBase extends TestCase
     {
         parent::setUp();
 
-        $config = [
-            'blob_library' => [
-                'use_http_mode' => true,
-                'bucket_identifier' => self::BUCKET_IDENTIFIER,
-                'http_mode' => [
-                    'bucket_key' => self::BUCKET_KEY,
-                    'blob_base_url' => self::BLOB_BASE_URL,
-                    'oidc_enabled' => false,
-                ],
-            ],
-        ];
+        $this->createWithoutAuthentication();
+    }
 
-        // Create a new BlobApi instance
+    /**
+     * @throws BlobApiError
+     */
+    protected function createWithoutAuthentication(): void
+    {
+        $this->blobApi = BlobApi::createFromConfig(self::TEST_CONFIG);
+    }
+
+    protected function createWithAuthentication(): void
+    {
+        $config = self::TEST_CONFIG;
+        $config['blob_library']['http_mode']['oidc_enabled'] = true;
+        $config['blob_library']['http_mode']['oidc_provider_url'] = 'https://auth.com';
+        $config['blob_library']['http_mode']['oidc_client_id'] = 'client';
+        $config['blob_library']['http_mode']['oidc_client_secret'] = 'secret';
+
         $this->blobApi = BlobApi::createFromConfig($config);
     }
 

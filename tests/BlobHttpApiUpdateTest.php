@@ -37,6 +37,33 @@ class BlobHttpApiUpdateTest extends BlobHttpApiTestBase
     /**
      * @throws BlobApiError
      */
+    public function testPatchFileSuccessAuthenticated(): void
+    {
+        $this->createWithAuthentication();
+
+        $requestHistory = [];
+        $this->createMockClient([
+            new Response(201, [], '{"token_endpoint": "https://example.com/get_token"}'),
+            new Response(201, [], '{"access_token": "foobar", "expires_in": 3600}'),
+            new Response(200, [], '{"identifier":"1234"}'),
+        ], $requestHistory);
+
+        $blobFile = new BlobFile();
+        $blobFile->setFileName('test.txt');
+        $blobFile->setIdentifier('1234');
+        $blobFile->setFile('data 2');
+
+        $blobFile = $this->blobApi->updateFile($blobFile);
+        $this->assertEquals('1234', $blobFile->getIdentifier());
+
+        $request = $requestHistory[2]['request'];
+        assert($request instanceof Request);
+        $this->validateRequest($request, 'PATCH', '1234');
+    }
+
+    /**
+     * @throws BlobApiError
+     */
     public function testPatchFileStreamSuccess(): void
     {
         $this->createMockClient([

@@ -22,6 +22,26 @@ class BlobHttpApiRemoveTest extends BlobHttpApiTestBase
         $this->validateRequest($request, 'DELETE', '1234');
     }
 
+    /**
+     * @throws BlobApiError
+     */
+    public function testRemoveFileSuccessAuthenticated(): void
+    {
+        $this->createWithAuthentication();
+
+        $requestHistory = [];
+        $this->createMockClient([
+            new Response(201, [], '{"token_endpoint": "https://example.com/get_token"}'),
+            new Response(201, [], '{"access_token": "foobar", "expires_in": 3600}'),
+            new Response(204),
+        ], $requestHistory);
+
+        $this->blobApi->removeFile('1234');
+
+        $request = $requestHistory[2]['request'];
+        $this->validateRequest($request, 'DELETE', '1234');
+    }
+
     public function testRemoveFileForbiddenSignature(): void
     {
         $this->createMockClient([
