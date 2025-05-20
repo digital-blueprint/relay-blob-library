@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.3.0
+
 - Complete re-make of the blob library. The actual Blob API access is now wrapped in a BlobFileApiInterface implementation,
 where the library provides a built-in HTTP access implementation.
 - Add support for custom Blob File API implementations. This allows injecting the `dbp.relay.blob.file_api` service defined 
