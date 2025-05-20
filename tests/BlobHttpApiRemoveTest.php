@@ -9,14 +9,17 @@ use GuzzleHttp\Psr7\Response;
 
 class BlobHttpApiRemoveTest extends BlobHttpApiTestBase
 {
-    public function testRemoveFileNotFound(): void
+    public function testRemoveFileSuccess(): void
     {
+        $requestHistory = [];
         $this->createMockClient([
             new Response(204),
-        ]);
+        ], $requestHistory);
 
         $this->blobApi->removeFile('1234');
-        $this->assertTrue(true);
+
+        $request = $requestHistory[0]['request'];
+        $this->validateRequest($request, 'DELETE', '1234');
     }
 
     public function testRemoveFileForbiddenSignature(): void

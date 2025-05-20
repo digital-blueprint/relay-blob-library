@@ -6,6 +6,7 @@ namespace Dbp\Relay\BlobLibrary\Tests;
 
 use Dbp\Relay\BlobLibrary\Api\BlobApi;
 use Dbp\Relay\BlobLibrary\Api\BlobApiError;
+use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 
 class BlobHttpApiGetTest extends BlobHttpApiTestBase
@@ -15,12 +16,17 @@ class BlobHttpApiGetTest extends BlobHttpApiTestBase
      */
     public function testGetFileSuccess(): void
     {
+        $requestHistory = [];
         $this->createMockClient([
             new Response(200, [], '{"identifier":"1234"}'),
-        ]);
+        ], $requestHistory);
 
         $blobFile = $this->blobApi->getFile('1234');
         $this->assertEquals('1234', $blobFile->getIdentifier());
+
+        $request = $requestHistory[0]['request'];
+        assert($request instanceof Request);
+        $this->validateRequest($request, 'GET', '1234');
     }
 
     /**
@@ -28,14 +34,22 @@ class BlobHttpApiGetTest extends BlobHttpApiTestBase
      */
     public function testGetFilesSuccess(): void
     {
+        $requestHistory = [];
         $this->createMockClient([
             new Response(200, body: '{"hydra:member": [{"identifier":"1234"},{"identifier":"1235"}]}'),
-        ]);
+        ], $requestHistory);
 
         $blobFiles = $this->blobApi->getFiles();
         $this->assertCount(2, $blobFiles);
         $this->assertEquals('1234', $blobFiles[0]->getIdentifier());
         $this->assertEquals('1235', $blobFiles[1]->getIdentifier());
+
+        $request = $requestHistory[0]['request'];
+        assert($request instanceof Request);
+        $this->validateRequest($request, 'GET', extraQueryParams: [
+            'page' => '1',
+            'perPage' => '30',
+        ]);
     }
 
     /**
@@ -43,15 +57,22 @@ class BlobHttpApiGetTest extends BlobHttpApiTestBase
      */
     public function testGetFileIncludeDataSuccess(): void
     {
+        $requestHistory = [];
         $this->createMockClient([
             new Response(200, [], '{"identifier":"1234", "contentUrl": "some_url"}'),
-        ]);
+        ], $requestHistory);
 
         $options = [];
         BlobApi::setIncludeFileContents($options, true);
         $blobFile = $this->blobApi->getFile('1234', $options);
         $this->assertEquals('1234', $blobFile->getIdentifier());
         $this->assertEquals('some_url', $blobFile->getContentUrl());
+
+        $request = $requestHistory[0]['request'];
+        assert($request instanceof Request);
+        $this->validateRequest($request, 'GET', '1234', extraQueryParams: [
+            'includeData' => '1',
+        ]);
     }
 
     public function testGetFileForbidden(): void
@@ -131,18 +152,23 @@ class BlobHttpApiGetTest extends BlobHttpApiTestBase
      */
     public function testGetFileResponseSuccess(): void
     {
+        $requestHistory = [];
         $content = 'this is a data stream';
         $this->createMockClient([
             new Response(200, headers: [
                 'Content-Type' => 'text/plain',
                 'Content-Length' => (string) strlen($content),
             ], body: $content),
-        ]);
+        ], $requestHistory);
 
         ob_start();
         $this->blobApi->getFileResponse('1234')->sendContent();
         $actualContent = ob_get_clean();
         $this->assertEquals($content, $actualContent);
+
+        $request = $requestHistory[0]['request'];
+        assert($request instanceof Request);
+        $this->validateRequest($request, 'GET', '1234', 'download');
     }
 
     public function testGetFileResponseForbidden(): void

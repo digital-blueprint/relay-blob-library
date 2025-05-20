@@ -6,6 +6,7 @@ namespace Dbp\Relay\BlobLibrary\Tests;
 
 use Dbp\Relay\BlobLibrary\Api\BlobApiError;
 use Dbp\Relay\BlobLibrary\Api\BlobFile;
+use GuzzleHttp\Psr7\Request;
 use GuzzleHttp\Psr7\Response;
 
 class BlobHttpApiUpdateTest extends BlobHttpApiTestBase
@@ -15,9 +16,10 @@ class BlobHttpApiUpdateTest extends BlobHttpApiTestBase
      */
     public function testPatchFileSuccess(): void
     {
+        $requestHistory = [];
         $this->createMockClient([
             new Response(200, [], '{"identifier":"1234"}'),
-        ]);
+        ], $requestHistory);
 
         $blobFile = new BlobFile();
         $blobFile->setFileName('test.txt');
@@ -26,6 +28,10 @@ class BlobHttpApiUpdateTest extends BlobHttpApiTestBase
 
         $blobFile = $this->blobApi->updateFile($blobFile);
         $this->assertEquals('1234', $blobFile->getIdentifier());
+
+        $request = $requestHistory[0]['request'];
+        assert($request instanceof Request);
+        $this->validateRequest($request, 'PATCH', '1234');
     }
 
     /**
