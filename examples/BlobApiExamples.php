@@ -55,6 +55,8 @@ try {
 
     // remove the file
     $blobApi->removeFile($blobFile->getIdentifier());
-} catch (BlobApiError $e) {
-    echo 'An error occurred: '.$e->getMessage()."\n";
+} catch (BlobApiError $blobApiError) {
+    echo 'An error occurred: '.$blobApiError->getMessage()."\n";
+    echo 'Error ID: '.$blobApiError->getErrorId()."\n";
+    echo 'Blob error ID: '.$blobApiError->getBlobErrorId()."\n";
 }
