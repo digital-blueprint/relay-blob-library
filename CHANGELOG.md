@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## v0.3.0
+## v0.3.2
 
 - Complete re-make of the blob library. The actual Blob API access is now wrapped in a BlobFileApiInterface implementation,
 where the library provides a built-in HTTP access implementation.
