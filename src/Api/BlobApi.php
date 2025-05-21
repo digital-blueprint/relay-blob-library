@@ -6,7 +6,7 @@ namespace Dbp\Relay\BlobLibrary\Api;
 
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
-use Symfony\Component\DependencyInjection\Container;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Response;
 
 class BlobApi implements BlobFileApiInterface
@@ -130,7 +130,7 @@ class BlobApi implements BlobFileApiInterface
     /**
      * @throws BlobApiError
      */
-    public static function createFromConfig(array $config, ?Container $container = null): BlobApi
+    public static function createFromConfig(array $config, ?ContainerInterface $container = null): BlobApi
     {
         $bucketIdentifier = $config['blob_library']['bucket_identifier'] ?? null;
         if ($bucketIdentifier === null) {
