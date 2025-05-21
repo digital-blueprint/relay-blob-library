@@ -56,7 +56,7 @@ class BlobApi implements BlobFileApiInterface
                         ->scalarNode('bucket_key')
                         ->info('The signature key of the Blob bucket. Required for HTTP mode.')
                         ->end()
-                        ->scalarNode('base_url')
+                        ->scalarNode('blob_base_url')
                         ->info('The base URL of the HTTP Blob API. Required for HTTP mode.')
                         ->end()
                         ->scalarNode('oidc_enabled')
