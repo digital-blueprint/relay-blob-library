@@ -4,6 +4,7 @@
 
 - Add createSignedUrl method
 - Always close opened file resources
+- Add SignatureTools::createSignedUrl
 
 ## v0.3.2
 

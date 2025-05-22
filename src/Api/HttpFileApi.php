@@ -28,62 +28,6 @@ class HttpFileApi extends AbstractBlobFileApi
     private ?string $token = null;
     private int $timeTokenExpires = 0;
 
-    /**
-     * @throws BlobApiError
-     */
-    private static function createSignedUrlFromQueryParameters(string $bucketKey, string $blobBaseUrl,
-        array $queryParameters, ?string $identifier = null, ?string $action = null): string
-    {
-        $path = '/blob/files';
-        if ($identifier !== null) {
-            $path .= '/'.urlencode($identifier);
-        }
-        if ($action !== null) {
-            $path .= '/'.urlencode($action);
-        }
-
-        $pathAndQuery = $path.'?'.http_build_query($queryParameters, '', '&', PHP_QUERY_RFC3986);
-        $payload = [
-            'ucs' => SignatureTools::generateSha256Checksum($pathAndQuery),
-        ];
-
-        try {
-            $signature = SignatureTools::createSignature($bucketKey, $payload);
-        } catch (\Exception) {
-            throw new BlobApiError('Blob request could not be signed', BlobApiError::CREATING_SIGNATURE_FAILED);
-        }
-
-        return $blobBaseUrl.$pathAndQuery.'&sig='.$signature;
-    }
-
-    private static function createQueryParameters(string $bucketIdentifier,
-        string $method, array $parameters = [], array $options = []): array
-    {
-        $queryParameters = $parameters;
-        $queryParameters['bucketIdentifier'] = $bucketIdentifier;
-        $queryParameters['creationTime'] = date('c');
-        $queryParameters['method'] = $method;
-
-        if (BlobApi::getIncludeDeleteAt($options)) {
-            $queryParameters['includeDeleteAt'] = '1';
-        }
-        if (BlobApi::getIncludeFileContents($options)) {
-            $queryParameters['includeData'] = '1';
-        }
-        if ($deleteIn = BlobApi::getDeleteIn($options)) {
-            $queryParameters['deleteIn'] = $deleteIn;
-        }
-        if ($prefix = BlobApi::getPrefix($options)) {
-            $queryParameters['prefix'] = $prefix;
-        }
-        if (BlobApi::getPrefixStartsWith($options)) {
-            $queryParameters['startsWith'] = '1';
-        }
-        ksort($queryParameters);
-
-        return $queryParameters;
-    }
-
     public function __construct(string $bucketIdentifier)
     {
         parent::__construct($bucketIdentifier);
@@ -349,9 +293,8 @@ class HttpFileApi extends AbstractBlobFileApi
     private function createSignedUrlInternal(string $method, array $parameters = [], array $options = [],
         ?string $identifier = null, ?string $action = null): string
     {
-        return self::createSignedUrlFromQueryParameters($this->bucketKey, $this->blobBaseUrl,
-            self::createQueryParameters($this->getBucketIdentifier(), $method, $parameters, $options),
-            $identifier, $action);
+        return SignatureTools::createSignedUrl($this->getBucketIdentifier(), $this->bucketKey,
+            $method, $this->blobBaseUrl, $identifier, $action, $parameters, $options);
     }
 
     /**

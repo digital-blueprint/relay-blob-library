@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\BlobLibrary\Helpers;
 
+use Dbp\Relay\BlobLibrary\Api\BlobApi;
 use Dbp\Relay\BlobLibrary\Api\BlobApiError;
 use GuzzleHttp\Psr7\Utils;
 use Jose\Component\Core\AlgorithmManager;
@@ -18,6 +19,8 @@ use Psr\Http\Message\StreamInterface;
 
 class SignatureTools
 {
+    private const BLOB_FILES_PATH = '/blob/files';
+
     /**
      * Create a JWS token.
      *
@@ -89,6 +92,18 @@ class SignatureTools
     }
 
     /**
+     * @throws BlobApiError
+     */
+    public static function createSignedUrl(string $bucketIdentifier, string $bucketKey,
+        string $method, ?string $blobBaseUrl = '', ?string $identifier = null, ?string $action = null,
+        array $parameters = [], array $options = []): string
+    {
+        return self::createSignedUrlFromQueryParameters($bucketKey, $blobBaseUrl,
+            self::createQueryParameters($bucketIdentifier, $method, $parameters, $options),
+            $identifier, $action);
+    }
+
+    /**
      * Create the JWK from a shared secret.
      *
      * @param string $secret to create the (symmetric) JWK from
@@ -154,5 +169,61 @@ class SignatureTools
         }
 
         return $ok;
+    }
+
+    /**
+     * @throws BlobApiError
+     */
+    private static function createSignedUrlFromQueryParameters(string $bucketKey, string $blobBaseUrl,
+        array $queryParameters, ?string $identifier = null, ?string $action = null): string
+    {
+        $path = self::BLOB_FILES_PATH;
+        if ($identifier !== null) {
+            $path .= '/'.urlencode($identifier);
+        }
+        if ($action !== null) {
+            $path .= '/'.urlencode($action);
+        }
+
+        $pathAndQuery = $path.'?'.http_build_query($queryParameters, '', '&', PHP_QUERY_RFC3986);
+        $payload = [
+            'ucs' => self::generateSha256Checksum($pathAndQuery),
+        ];
+
+        try {
+            $signature = self::createSignature($bucketKey, $payload);
+        } catch (\Exception) {
+            throw new BlobApiError('Blob request could not be signed', BlobApiError::CREATING_SIGNATURE_FAILED);
+        }
+
+        return $blobBaseUrl.$pathAndQuery.'&sig='.$signature;
+    }
+
+    private static function createQueryParameters(string $bucketIdentifier,
+        string $method, array $parameters = [], array $options = []): array
+    {
+        $queryParameters = $parameters;
+        $queryParameters['bucketIdentifier'] = $bucketIdentifier;
+        $queryParameters['creationTime'] = date('c');
+        $queryParameters['method'] = $method;
+
+        if (BlobApi::getIncludeDeleteAt($options)) {
+            $queryParameters['includeDeleteAt'] = '1';
+        }
+        if (BlobApi::getIncludeFileContents($options)) {
+            $queryParameters['includeData'] = '1';
+        }
+        if ($deleteIn = BlobApi::getDeleteIn($options)) {
+            $queryParameters['deleteIn'] = $deleteIn;
+        }
+        if ($prefix = BlobApi::getPrefix($options)) {
+            $queryParameters['prefix'] = $prefix;
+        }
+        if (BlobApi::getPrefixStartsWith($options)) {
+            $queryParameters['startsWith'] = '1';
+        }
+        ksort($queryParameters);
+
+        return $queryParameters;
     }
 }
