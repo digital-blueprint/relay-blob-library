@@ -23,9 +23,9 @@ class SignedPayloadTest extends TestCase
                 'prefix' => 'MyApp/MyShare',
             ];
 
-            $token = SignatureTools::create($secret, $payload);
+            $token = SignatureTools::createSignature($secret, $payload);
 
-            $data = SignatureTools::verify($secret, $token);
+            $data = SignatureTools::verifySignature($secret, $token);
             $this->assertIsArray($data);
             $this->assertEquals($payload['bucketID'], $data['bucketID']);
             $this->assertEquals($payload['creationTime'], $data['creationTime']);
@@ -51,9 +51,9 @@ class SignedPayloadTest extends TestCase
                 'metadata' => [],
             ];
 
-            $token = SignatureTools::create($secret, $payload);
+            $token = SignatureTools::createSignature($secret, $payload);
 
-            $data = SignatureTools::verify($secret, $token);
+            $data = SignatureTools::verifySignature($secret, $token);
             $this->assertEquals($payload['bucketID'], $data['bucketID']);
             $this->assertEquals($payload['creationTime'], $data['creationTime']);
             $this->assertEquals($payload['prefix'], $data['prefix']);
@@ -78,9 +78,9 @@ class SignedPayloadTest extends TestCase
                 'prefix' => 'MyApp/MyShare',
             ];
 
-            $token = SignatureTools::create($secret, $payload);
+            $token = SignatureTools::createSignature($secret, $payload);
 
-            $data = SignatureTools::verify($secret, $token);
+            $data = SignatureTools::verifySignature($secret, $token);
             $this->assertIsArray($data);
             $this->assertEquals($payload['bucketID'], $data['bucketID']);
             $this->assertEquals($payload['creationTime'], $data['creationTime']);
@@ -103,8 +103,8 @@ class SignedPayloadTest extends TestCase
         ];
 
         try {
-            $token = SignatureTools::create($secret, $payload);
-            SignatureTools::verify($secret2, $token);
+            $token = SignatureTools::createSignature($secret, $payload);
+            SignatureTools::verifySignature($secret2, $token);
         } catch (BlobApiError $e) {
             $this->assertEquals('blob-library:invalid-signature', $e->getErrorId());
 

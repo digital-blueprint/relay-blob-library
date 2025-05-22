@@ -9,7 +9,7 @@ use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Response;
 
-class BlobApi implements BlobFileApiInterface
+class BlobApi
 {
     public const DBP_RELAY_BLOB_FILE_API_SERVICE_ALIAS = 'dbp.relay.blob.file_api';
 
@@ -28,8 +28,6 @@ class BlobApi implements BlobFileApiInterface
      * @deprecated
      */
     public const PREFIX_OPTION = 'prefix';
-
-    private BlobFileApiInterface $blobFileApiImpl;
 
     public static function getConfigNodeDefinition(): ArrayNodeDefinition
     {
@@ -108,10 +106,8 @@ class BlobApi implements BlobFileApiInterface
         ]);
     }
 
-    public static function createFromBlobFileApi(string $bucketIdentifier, BlobFileApiInterface $blobFileApi): BlobApi
+    public static function createFromBlobFileApi(AbstractBlobFileApi $blobFileApi): BlobApi
     {
-        $blobFileApi->setBucketIdentifier($bucketIdentifier);
-
         return new BlobApi($blobFileApi);
     }
 
@@ -140,7 +136,7 @@ class BlobApi implements BlobFileApiInterface
 
         $useHttpMode = $config['blob_library']['use_http_mode'] ?? true;
         if ($useHttpMode) {
-            $blobFileApiImpl = new HttpFileApi();
+            $blobFileApiImpl = new HttpFileApi($bucketIdentifier);
             $blobFileApiImpl->setConfig($config['blob_library']['http_mode'] ?? []);
         } else {
             $customBlobApiService = $config['blob_library']['custom_file_api_service'] ?? null;
@@ -161,13 +157,12 @@ class BlobApi implements BlobFileApiInterface
                     'Custom Blob API implementation service or alias not found: '.$exception->getMessage(),
                     BlobApiError::CONFIGURATION_INVALID);
             }
-            if (false === $blobFileApiImpl instanceof BlobFileApiInterface) {
+            if (false === $blobFileApiImpl instanceof AbstractBlobFileApi) {
                 throw new BlobApiError(
                     'Custom Blob API implementation service or alias must implement interface '.
-                    BlobFileApiInterface::class, BlobApiError::CONFIGURATION_INVALID);
+                    AbstractBlobFileApi::class, BlobApiError::CONFIGURATION_INVALID);
             }
         }
-        $blobFileApiImpl->setBucketIdentifier($bucketIdentifier);
 
         return new BlobApi($blobFileApiImpl);
     }
@@ -244,19 +239,19 @@ class BlobApi implements BlobFileApiInterface
         return $options[self::DISABLE_OUTPUT_VALIDATION_OPTION] ?? false;
     }
 
-    protected function __construct(BlobFileApiInterface $blobFileApiImpl)
+    protected function __construct(
+        private readonly AbstractBlobFileApi $blobFileApiImpl)
     {
-        $this->blobFileApiImpl = $blobFileApiImpl;
     }
 
-    public function getBlobFileApiImpl(): BlobFileApiInterface
+    public function getBlobFileApiImpl(): AbstractBlobFileApi
     {
         return $this->blobFileApiImpl;
     }
 
-    public function setBucketIdentifier(string $bucketIdentifier): void
+    public function getBucketIdentifier(): string
     {
-        $this->blobFileApiImpl->setBucketIdentifier($bucketIdentifier);
+        return $this->blobFileApiImpl->getBucketIdentifier();
     }
 
     /**
@@ -320,5 +315,14 @@ class BlobApi implements BlobFileApiInterface
     public function getFileResponse(string $identifier, array $options = []): Response
     {
         return $this->blobFileApiImpl->getFileResponse($identifier, $options);
+    }
+
+    /**
+     * @throws BlobApiError
+     */
+    public function createSignedUrl(string $method, array $parameters = [], array $options = [],
+        ?string $identifier = null, ?string $action = null): string
+    {
+        return $this->blobFileApiImpl->createSignedUrl($method, $parameters, $options, $identifier, $action);
     }
 }

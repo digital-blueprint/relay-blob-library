@@ -13,11 +13,12 @@ use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-class HttpFileApi implements BlobFileApiInterface
+class HttpFileApi extends AbstractBlobFileApi
 {
+    private const DOWNLOAD_ACTION = 'download';
+
     private Client $client;
     private ?string $bucketKey = null;
-    private ?string $bucketIdentifier = null;
     private bool $oidcEnabled = true;
     private ?string $blobBaseUrl = null;
     private ?string $openIdProviderUrl = null;
@@ -27,8 +28,66 @@ class HttpFileApi implements BlobFileApiInterface
     private ?string $token = null;
     private int $timeTokenExpires = 0;
 
-    public function __construct()
+    /**
+     * @throws BlobApiError
+     */
+    private static function createSignedUrlFromQueryParameters(string $bucketKey, string $blobBaseUrl,
+        array $queryParameters, ?string $identifier = null, ?string $action = null): string
     {
+        $path = '/blob/files';
+        if ($identifier !== null) {
+            $path .= '/'.urlencode($identifier);
+        }
+        if ($action !== null) {
+            $path .= '/'.urlencode($action);
+        }
+
+        $pathAndQuery = $path.'?'.http_build_query($queryParameters, '', '&', PHP_QUERY_RFC3986);
+        $payload = [
+            'ucs' => SignatureTools::generateSha256Checksum($pathAndQuery),
+        ];
+
+        try {
+            $signature = SignatureTools::createSignature($bucketKey, $payload);
+        } catch (\Exception) {
+            throw new BlobApiError('Blob request could not be signed', BlobApiError::CREATING_SIGNATURE_FAILED);
+        }
+
+        return $blobBaseUrl.$pathAndQuery.'&sig='.$signature;
+    }
+
+    private static function createQueryParameters(string $bucketIdentifier,
+        string $method, array $parameters = [], array $options = []): array
+    {
+        $queryParameters = $parameters;
+        $queryParameters['bucketIdentifier'] = $bucketIdentifier;
+        $queryParameters['creationTime'] = date('c');
+        $queryParameters['method'] = $method;
+
+        if (BlobApi::getIncludeDeleteAt($options)) {
+            $queryParameters['includeDeleteAt'] = '1';
+        }
+        if (BlobApi::getIncludeFileContents($options)) {
+            $queryParameters['includeData'] = '1';
+        }
+        if ($deleteIn = BlobApi::getDeleteIn($options)) {
+            $queryParameters['deleteIn'] = $deleteIn;
+        }
+        if ($prefix = BlobApi::getPrefix($options)) {
+            $queryParameters['prefix'] = $prefix;
+        }
+        if (BlobApi::getPrefixStartsWith($options)) {
+            $queryParameters['startsWith'] = '1';
+        }
+        ksort($queryParameters);
+
+        return $queryParameters;
+    }
+
+    public function __construct(string $bucketIdentifier)
+    {
+        parent::__construct($bucketIdentifier);
+
         $this->client = new Client();
     }
 
@@ -65,11 +124,6 @@ class HttpFileApi implements BlobFileApiInterface
         $this->client = $client;
     }
 
-    public function setBucketIdentifier(string $bucketIdentifier): void
-    {
-        $this->bucketIdentifier = $bucketIdentifier;
-    }
-
     /**
      * @throws BlobApiError
      */
@@ -96,7 +150,7 @@ class HttpFileApi implements BlobFileApiInterface
     public function removeFile(string $identifier, array $options = []): void
     {
         try {
-            $this->request('DELETE', $this->generateUrl('DELETE', [], $options, $identifier));
+            $this->request('DELETE', $this->createSignedUrlInternal('DELETE', [], $options, $identifier));
         } catch (\Throwable $exception) {
             throw BlobApiError::createFromRequestException($exception, 'Removing file failed');
         }
@@ -134,7 +188,7 @@ class HttpFileApi implements BlobFileApiInterface
     public function getFile(string $identifier, array $options = []): BlobFile
     {
         try {
-            $url = $this->generateUrl('GET', [], $options, $identifier);
+            $url = $this->createSignedUrlInternal('GET', [], $options, $identifier);
             $requestOptions = [
                 RequestOptions::HEADERS => [
                     'Accept' => 'application/ld+json',
@@ -157,15 +211,7 @@ class HttpFileApi implements BlobFileApiInterface
             'perPage' => $maxNumItemsPerPage,
         ];
 
-        // TODO: replace by filter
-        if ($prefix = ($options['prefix'] ?? null)) {
-            $parameters['prefix'] = $prefix;
-        }
-        if ($options['startsWith'] ?? false) {
-            $parameters['startsWith'] = '1';
-        }
-
-        $url = $this->generateUrl('GET', $parameters, $options);
+        $url = $this->createSignedUrlInternal('GET', $parameters, $options);
         $requestOptions = [
             RequestOptions::HEADERS => [
                 'Accept' => 'application/ld+json',
@@ -193,7 +239,7 @@ class HttpFileApi implements BlobFileApiInterface
 
     public function getFileResponse(string $identifier, array $options = []): Response
     {
-        $url = $this->generateUrl('GET', [], $options, $identifier, 'download');
+        $url = $this->createSignedUrlInternal('GET', [], $options, $identifier, self::DOWNLOAD_ACTION);
 
         return new StreamedResponse(function () use ($url) {
             try {
@@ -206,6 +252,15 @@ class HttpFileApi implements BlobFileApiInterface
                 echo $body->read(1024);
             }
         });
+    }
+
+    /**
+     * @throws BlobApiError
+     */
+    public function createSignedUrl(string $method, array $parameters = [], array $options = [],
+        ?string $identifier = null, ?string $action = null): string
+    {
+        return $this->createSignedUrlInternal($method, $parameters, $options, $identifier, $action);
     }
 
     /**
@@ -226,115 +281,77 @@ class HttpFileApi implements BlobFileApiInterface
             $parameters['notifyEmail'] = $notifyEmail;
         }
 
-        $url = $this->generateUrl($method, $parameters, $options, $isAdd ? null : $blobFile->getIdentifier());
+        $url = $this->createSignedUrlInternal($method, $parameters, $options, $isAdd ? null : $blobFile->getIdentifier());
 
         $multipart = [];
-
-        if ($file = $blobFile->getFile()) {
-            if ($file instanceof \SplFileInfo) {
-                $file = Utils::streamFor(fopen($file->getRealPath(), 'r'));
-            }
-            $multipart[] = [
-                'name' => 'file',
-                'contents' => $file,
-                'filename' => $blobFile->getFileName() ?? '',
-            ];
-            if ($this->sendChecksums) {
-                $multipart[] = [
-                    'name' => 'fileHash',
-                    'contents' => SignatureTools::generateSha256Checksum($file),
-                ];
-            }
-        }
-
-        if ($fileName = $blobFile->getFileName()) {
-            $multipart[] = [
-                'name' => 'fileName',
-                'contents' => $fileName,
-            ];
-        }
-
-        if ($metadata = $blobFile->getMetadata()) {
-            $multipart[] = [
-                'name' => 'metadata',
-                'contents' => $metadata,
-            ];
-            if ($this->sendChecksums) {
-                $multipart[] = [
-                    'name' => 'metadataHash',
-                    'contents' => SignatureTools::generateSha256Checksum($metadata),
-                ];
-            }
-        }
-
-        $requestOptions = [
-            RequestOptions::HEADERS => ['Accept' => 'application/ld+json'],
-            RequestOptions::MULTIPART => $multipart,
-        ];
+        $fileHandle = null;
 
         try {
-            return $this->createBlobFileFromResponse($this->request($method, $url, $requestOptions));
-        } catch (\Throwable $exception) {
-            throw BlobApiError::createFromRequestException($exception, $isAdd ?
-                'Adding file failed' : 'Updating file failed');
-        }
-    }
+            if ($file = $blobFile->getFile()) {
+                if ($file instanceof \SplFileInfo) {
+                    $fileHandle = fopen($file->getRealPath(), 'r');
+                    $file = Utils::streamFor();
+                }
+                $multipart[] = [
+                    'name' => 'file',
+                    'contents' => $file,
+                    'filename' => $blobFile->getFileName() ?? '',
+                ];
+                if ($this->sendChecksums) {
+                    $multipart[] = [
+                        'name' => 'fileHash',
+                        'contents' => SignatureTools::generateSha256Checksum($file),
+                    ];
+                }
+            }
 
-    private function getQueryParameters(string $method, array $parameters = [], array $options = []): array
-    {
-        $queryParameters = $parameters;
-        $queryParameters['bucketIdentifier'] = $this->bucketIdentifier;
-        $queryParameters['creationTime'] = date('c');
-        $queryParameters['method'] = $method;
+            if ($fileName = $blobFile->getFileName()) {
+                $multipart[] = [
+                    'name' => 'fileName',
+                    'contents' => $fileName,
+                ];
+            }
 
-        if (BlobApi::getIncludeDeleteAt($options)) {
-            $queryParameters['includeDeleteAt'] = '1';
-        }
-        if (BlobApi::getIncludeFileContents($options)) {
-            $queryParameters['includeData'] = '1';
-        }
-        if ($deleteIn = BlobApi::getDeleteIn($options)) {
-            $queryParameters['deleteIn'] = $deleteIn;
-        }
+            if ($metadata = $blobFile->getMetadata()) {
+                $multipart[] = [
+                    'name' => 'metadata',
+                    'contents' => $metadata,
+                ];
+                if ($this->sendChecksums) {
+                    $multipart[] = [
+                        'name' => 'metadataHash',
+                        'contents' => SignatureTools::generateSha256Checksum($metadata),
+                    ];
+                }
+            }
 
-        ksort($queryParameters);
+            $requestOptions = [
+                RequestOptions::HEADERS => ['Accept' => 'application/ld+json'],
+                RequestOptions::MULTIPART => $multipart,
+            ];
 
-        return $queryParameters;
+            try {
+                return $this->createBlobFileFromResponse($this->request($method, $url, $requestOptions));
+            } catch (\Throwable $exception) {
+                throw BlobApiError::createFromRequestException($exception, $isAdd ?
+                    'Adding file failed' : 'Updating file failed');
+            }
+        } finally {
+            if ($fileHandle !== null) {
+                fclose($fileHandle);
+            }
+        }
     }
 
     /**
      * @throws BlobApiError
      */
-    private function generateUrl(string $method, array $parameters = [], array $options = [],
-        ?string $identifier = null, ?string $appendix = null): string
+    private function createSignedUrlInternal(string $method, array $parameters = [], array $options = [],
+        ?string $identifier = null, ?string $action = null): string
     {
-        return $this->generateUrlFromQueryParameters(
-            $this->getQueryParameters($method, $parameters, $options),
-            $identifier, $appendix);
-    }
-
-    /**
-     * @throws BlobApiError
-     */
-    private function generateUrlFromQueryParameters(array $queryParameters, ?string $identifier = null,
-        ?string $appendix = null): string
-    {
-        $path = '/blob/files';
-        if ($identifier !== null) {
-            $path .= '/'.urlencode($identifier);
-        }
-        if ($appendix !== null) {
-            $path .= '/'.urlencode($appendix);
-        }
-
-        // It's mandatory that "%20" is used instead of "+" for spaces in the query string, otherwise the checksum will be invalid!
-        $urlPart = $path.'?'.http_build_query($queryParameters, '', '&', PHP_QUERY_RFC3986);
-        $checksum = SignatureTools::generateSha256Checksum($urlPart);
-        $payload = [
-            'ucs' => $checksum,
-        ];
-
-        return $this->blobBaseUrl.$urlPart.'&sig='.$this->createSignature($payload);
+        return self::createSignedUrlFromQueryParameters($this->bucketKey, $this->blobBaseUrl,
+            self::createQueryParameters($this->getBucketIdentifier(), $method, $parameters, $options),
+            $identifier, $action);
     }
 
     /**
@@ -384,18 +401,6 @@ class HttpFileApi implements BlobFileApiInterface
         }
 
         return $this->token;
-    }
-
-    /**
-     * @throws BlobApiError
-     */
-    private function createSignature(array $payload): string
-    {
-        try {
-            return SignatureTools::create($this->bucketKey, $payload);
-        } catch (\Exception) {
-            throw new BlobApiError('Blob request could not be signed', BlobApiError::CREATING_SIGNATURE_FAILED);
-        }
     }
 
     /**

@@ -13,6 +13,7 @@ use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
+use GuzzleHttp\Psr7\Uri;
 use PHPUnit\Framework\TestCase;
 
 class BlobHttpApiTestBase extends TestCase
@@ -72,18 +73,26 @@ class BlobHttpApiTestBase extends TestCase
         }
         // $this->assertStringStartsWith('Bearer ', $request->getHeaderLine('Authorization'));
 
-        $path = $request->getUri()->getPath();
-        $this->assertEquals(
-            '/blob/files'.($identifier ? '/'.$identifier : '').($appendix ? '/'.$appendix : ''), $path);
-        $this->assertEquals(self::BLOB_BASE_URL, $request->getUri()->getScheme().'://'.$request->getUri()->getHost());
+        $this->validateUrl($request->getUri()->__toString(), $method, $identifier, $appendix, $extraQueryParams);
+    }
 
-        $extraQueryParams = array_merge($extraQueryParams, [
+    protected function validateUrl(string $url, string $method, ?string $identifier = null,
+        ?string $action = null, array $extraQueryParameters = []): void
+    {
+        $uri = new Uri($url);
+
+        $path = $uri->getPath();
+        $this->assertEquals(
+            '/blob/files'.($identifier ? '/'.$identifier : '').($action ? '/'.$action : ''), $path);
+        $this->assertEquals(self::BLOB_BASE_URL, $uri->getScheme().'://'.$uri->getHost());
+
+        $extraQueryParameters = array_merge($extraQueryParameters, [
             'bucketIdentifier' => self::BUCKET_IDENTIFIER,
             'method' => $method,
             'creationTime' => date('c'),
         ]);
 
-        $query = $request->getUri()->getQuery();
+        $query = $uri->getQuery();
         $pos = strrpos($query, '&');
         $queryWithoutSig = substr($query, 0, $pos);
 
@@ -92,7 +101,7 @@ class BlobHttpApiTestBase extends TestCase
         $payload = [
             'ucs' => $checksum,
         ];
-        $expectedSig = SignatureTools::create(self::BUCKET_KEY, $payload);
+        $expectedSig = SignatureTools::createSignature(self::BUCKET_KEY, $payload);
 
         $queryParams = explode('&', $query);
         foreach ($queryParams as $queryParam) {
@@ -100,7 +109,7 @@ class BlobHttpApiTestBase extends TestCase
             if ($parts[0] === 'sig') {
                 $this->assertEquals($expectedSig, $parts[1]);
             } else {
-                $this->assertEquals($extraQueryParams[$parts[0]], urldecode($parts[1]));
+                $this->assertEquals($extraQueryParameters[$parts[0]], urldecode($parts[1]));
             }
         }
     }
