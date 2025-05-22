@@ -13,7 +13,7 @@ use Psr\Http\Message\ResponseInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
-class HttpFileApi extends AbstractBlobFileApi
+class HttpFileApi implements BlobFileApiInterface
 {
     private const DOWNLOAD_ACTION = 'download';
 
@@ -28,10 +28,8 @@ class HttpFileApi extends AbstractBlobFileApi
     private ?string $token = null;
     private int $timeTokenExpires = 0;
 
-    public function __construct(string $bucketIdentifier)
+    public function __construct()
     {
-        parent::__construct($bucketIdentifier);
-
         $this->client = new Client();
     }
 
@@ -71,30 +69,31 @@ class HttpFileApi extends AbstractBlobFileApi
     /**
      * @throws BlobApiError
      */
-    public function addFile(BlobFile $blobFile, array $options = []): BlobFile
+    public function addFile(string $bucketIdentifier, BlobFile $blobFile, array $options = []): BlobFile
     {
-        return $this->addOrUpdateFile(true, $blobFile, $options);
+        return $this->addOrUpdateFile($bucketIdentifier, true, $blobFile, $options);
     }
 
     /**
      * @throws BlobApiError
      */
-    public function updateFile(BlobFile $blobFile, array $options = []): BlobFile
+    public function updateFile(string $bucketIdentifier, BlobFile $blobFile, array $options = []): BlobFile
     {
         if ($blobFile->getIdentifier() === null) {
             throw new BlobApiError('update file: identifier is required', BlobApiError::REQUIRED_PARAMETER_MISSING);
         }
 
-        return $this->addOrUpdateFile(false, $blobFile, $options);
+        return $this->addOrUpdateFile($bucketIdentifier, false, $blobFile, $options);
     }
 
     /**
      * @throws BlobApiError
      */
-    public function removeFile(string $identifier, array $options = []): void
+    public function removeFile(string $bucketIdentifier, string $identifier, array $options = []): void
     {
         try {
-            $this->request('DELETE', $this->createSignedUrlInternal('DELETE', [], $options, $identifier));
+            $this->request('DELETE',
+                $this->createSignedUrlInternal($bucketIdentifier, 'DELETE', [], $options, $identifier));
         } catch (\Throwable $exception) {
             throw BlobApiError::createFromRequestException($exception, 'Removing file failed');
         }
@@ -103,21 +102,21 @@ class HttpFileApi extends AbstractBlobFileApi
     /**
      * @throws BlobApiError
      */
-    public function removeFiles(array $options = []): void
+    public function removeFiles(string $bucketIdentifier, array $options = []): void
     {
         // TODO: filtering
         $currentPage = 1;
         $maxNumItemsPerPage = 100;
         $files = [];
         do {
-            $filePage = $this->getFiles($currentPage, $maxNumItemsPerPage, $options);
+            $filePage = $this->getFiles($bucketIdentifier, $currentPage, $maxNumItemsPerPage, $options);
             array_push($files, ...$filePage);
             ++$currentPage;
         } while (count($filePage) === $maxNumItemsPerPage);
 
         foreach ($files as $file) {
             try {
-                $this->removeFile($file->getIdentifier());
+                $this->removeFile($bucketIdentifier, $file->getIdentifier());
             } catch (BlobApiError $exception) {
                 if ($exception->getErrorId() !== BlobApiError::FILE_NOT_FOUND) {
                     throw $exception;
@@ -129,10 +128,10 @@ class HttpFileApi extends AbstractBlobFileApi
     /**
      * @throws BlobApiError
      */
-    public function getFile(string $identifier, array $options = []): BlobFile
+    public function getFile(string $bucketIdentifier, string $identifier, array $options = []): BlobFile
     {
         try {
-            $url = $this->createSignedUrlInternal('GET', [], $options, $identifier);
+            $url = $this->createSignedUrlInternal($bucketIdentifier, 'GET', [], $options, $identifier);
             $requestOptions = [
                 RequestOptions::HEADERS => [
                     'Accept' => 'application/ld+json',
@@ -148,14 +147,14 @@ class HttpFileApi extends AbstractBlobFileApi
     /**
      * @throws BlobApiError
      */
-    public function getFiles(int $currentPage = 1, int $maxNumItemsPerPage = 30, array $options = []): array
+    public function getFiles(string $bucketIdentifier, int $currentPage = 1, int $maxNumItemsPerPage = 30, array $options = []): array
     {
         $parameters = [
             'page' => $currentPage,
             'perPage' => $maxNumItemsPerPage,
         ];
 
-        $url = $this->createSignedUrlInternal('GET', $parameters, $options);
+        $url = $this->createSignedUrlInternal($bucketIdentifier, 'GET', $parameters, $options);
         $requestOptions = [
             RequestOptions::HEADERS => [
                 'Accept' => 'application/ld+json',
@@ -181,9 +180,9 @@ class HttpFileApi extends AbstractBlobFileApi
         }
     }
 
-    public function getFileResponse(string $identifier, array $options = []): Response
+    public function getFileResponse(string $bucketIdentifier, string $identifier, array $options = []): Response
     {
-        $url = $this->createSignedUrlInternal('GET', [], $options, $identifier, self::DOWNLOAD_ACTION);
+        $url = $this->createSignedUrlInternal($bucketIdentifier, 'GET', [], $options, $identifier, self::DOWNLOAD_ACTION);
 
         return new StreamedResponse(function () use ($url) {
             try {
@@ -201,16 +200,16 @@ class HttpFileApi extends AbstractBlobFileApi
     /**
      * @throws BlobApiError
      */
-    public function createSignedUrl(string $method, array $parameters = [], array $options = [],
+    public function createSignedUrl(string $bucketIdentifier, string $method, array $parameters = [], array $options = [],
         ?string $identifier = null, ?string $action = null): string
     {
-        return $this->createSignedUrlInternal($method, $parameters, $options, $identifier, $action);
+        return $this->createSignedUrlInternal($bucketIdentifier, $method, $parameters, $options, $identifier, $action);
     }
 
     /**
      * @throws BlobApiError
      */
-    private function addOrUpdateFile(bool $isAdd, BlobFile $blobFile, array $options = []): BlobFile
+    private function addOrUpdateFile(string $bucketIdentifier, bool $isAdd, BlobFile $blobFile, array $options = []): BlobFile
     {
         $method = $isAdd ? 'POST' : 'PATCH';
 
@@ -225,7 +224,8 @@ class HttpFileApi extends AbstractBlobFileApi
             $parameters['notifyEmail'] = $notifyEmail;
         }
 
-        $url = $this->createSignedUrlInternal($method, $parameters, $options, $isAdd ? null : $blobFile->getIdentifier());
+        $url = $this->createSignedUrlInternal($bucketIdentifier, $method, $parameters, $options,
+            $isAdd ? null : $blobFile->getIdentifier());
 
         $multipart = [];
         $fileHandle = null;
@@ -290,10 +290,10 @@ class HttpFileApi extends AbstractBlobFileApi
     /**
      * @throws BlobApiError
      */
-    private function createSignedUrlInternal(string $method, array $parameters = [], array $options = [],
+    private function createSignedUrlInternal(string $bucketIdentifier, string $method, array $parameters = [], array $options = [],
         ?string $identifier = null, ?string $action = null): string
     {
-        return SignatureTools::createSignedUrl($this->getBucketIdentifier(), $this->bucketKey,
+        return SignatureTools::createSignedUrl($bucketIdentifier, $this->bucketKey,
             $method, $this->blobBaseUrl, $identifier, $action, $parameters, $options);
     }
 

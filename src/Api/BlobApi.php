@@ -106,9 +106,9 @@ class BlobApi
         ]);
     }
 
-    public static function createFromBlobFileApi(AbstractBlobFileApi $blobFileApi): BlobApi
+    public static function createFromBlobFileApi(string $bucketIdentifier, BlobFileApiInterface $blobFileApi): BlobApi
     {
-        return new BlobApi($blobFileApi);
+        return new BlobApi($bucketIdentifier, $blobFileApi);
     }
 
     public static function getCustomModeConfig(string $bucketIdentifier,
@@ -136,7 +136,7 @@ class BlobApi
 
         $useHttpMode = $config['blob_library']['use_http_mode'] ?? true;
         if ($useHttpMode) {
-            $blobFileApiImpl = new HttpFileApi($bucketIdentifier);
+            $blobFileApiImpl = new HttpFileApi();
             $blobFileApiImpl->setConfig($config['blob_library']['http_mode'] ?? []);
         } else {
             $customBlobApiService = $config['blob_library']['custom_file_api_service'] ?? null;
@@ -157,14 +157,14 @@ class BlobApi
                     'Custom Blob API implementation service or alias not found: '.$exception->getMessage(),
                     BlobApiError::CONFIGURATION_INVALID);
             }
-            if (false === $blobFileApiImpl instanceof AbstractBlobFileApi) {
+            if (false === $blobFileApiImpl instanceof BlobFileApiInterface) {
                 throw new BlobApiError(
                     'Custom Blob API implementation service or alias must implement interface '.
-                    AbstractBlobFileApi::class, BlobApiError::CONFIGURATION_INVALID);
+                    BlobFileApiInterface::class, BlobApiError::CONFIGURATION_INVALID);
             }
         }
 
-        return new BlobApi($blobFileApiImpl);
+        return new BlobApi($bucketIdentifier, $blobFileApiImpl);
     }
 
     public static function setIncludeDeleteAt(array &$options, bool $includeDeleteAt): void
@@ -240,18 +240,19 @@ class BlobApi
     }
 
     protected function __construct(
-        private readonly AbstractBlobFileApi $blobFileApiImpl)
+        private readonly string $bucketIdentifier,
+        private readonly BlobFileApiInterface $blobFileApiImpl)
     {
     }
 
-    public function getBlobFileApiImpl(): AbstractBlobFileApi
+    public function getBlobFileApiImpl(): BlobFileApiInterface
     {
         return $this->blobFileApiImpl;
     }
 
     public function getBucketIdentifier(): string
     {
-        return $this->blobFileApiImpl->getBucketIdentifier();
+        return $this->bucketIdentifier;
     }
 
     /**
@@ -266,7 +267,7 @@ class BlobApi
             throw new BlobApiError('add file: fileName is required', BlobApiError::REQUIRED_PARAMETER_MISSING);
         }
 
-        return $this->blobFileApiImpl->addFile($blobFile, $options);
+        return $this->blobFileApiImpl->addFile($this->bucketIdentifier, $blobFile, $options);
     }
 
     /**
@@ -274,7 +275,7 @@ class BlobApi
      */
     public function updateFile(BlobFile $blobFile, array $options = []): BlobFile
     {
-        return $this->blobFileApiImpl->updateFile($blobFile, $options);
+        return $this->blobFileApiImpl->updateFile($this->bucketIdentifier, $blobFile, $options);
     }
 
     /**
@@ -282,7 +283,7 @@ class BlobApi
      */
     public function removeFile(string $identifier, array $options = []): void
     {
-        $this->blobFileApiImpl->removeFile($identifier, $options);
+        $this->blobFileApiImpl->removeFile($this->bucketIdentifier, $identifier, $options);
     }
 
     /**
@@ -290,7 +291,7 @@ class BlobApi
      */
     public function removeFiles(array $options = []): void
     {
-        $this->blobFileApiImpl->removeFiles($options);
+        $this->blobFileApiImpl->removeFiles($this->bucketIdentifier, $options);
     }
 
     /**
@@ -298,7 +299,7 @@ class BlobApi
      */
     public function getFile(string $identifier, array $options = []): BlobFile
     {
-        return $this->blobFileApiImpl->getFile($identifier, $options);
+        return $this->blobFileApiImpl->getFile($this->bucketIdentifier, $identifier, $options);
     }
 
     /**
@@ -306,7 +307,7 @@ class BlobApi
      */
     public function getFiles(int $currentPage = 1, int $maxNumItemsPerPage = 30, array $options = []): array
     {
-        return $this->blobFileApiImpl->getFiles($currentPage, $maxNumItemsPerPage, $options);
+        return $this->blobFileApiImpl->getFiles($this->bucketIdentifier, $currentPage, $maxNumItemsPerPage, $options);
     }
 
     /**
@@ -314,7 +315,7 @@ class BlobApi
      */
     public function getFileResponse(string $identifier, array $options = []): Response
     {
-        return $this->blobFileApiImpl->getFileResponse($identifier, $options);
+        return $this->blobFileApiImpl->getFileResponse($this->bucketIdentifier, $identifier, $options);
     }
 
     /**
@@ -323,6 +324,6 @@ class BlobApi
     public function createSignedUrl(string $method, array $parameters = [], array $options = [],
         ?string $identifier = null, ?string $action = null): string
     {
-        return $this->blobFileApiImpl->createSignedUrl($method, $parameters, $options, $identifier, $action);
+        return $this->blobFileApiImpl->createSignedUrl($this->bucketIdentifier, $method, $parameters, $options, $identifier, $action);
     }
 }
