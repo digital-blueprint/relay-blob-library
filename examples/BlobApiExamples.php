@@ -1,18 +1,18 @@
 <?php
 
 declare(strict_types=1);
-// require autoload of the correct directory
+
 require __DIR__.'/../vendor/autoload.php';
+
 use Dbp\Relay\BlobLibrary\Api\BlobApi;
 use Dbp\Relay\BlobLibrary\Api\BlobApiError;
 use Dbp\Relay\BlobLibrary\Api\BlobFile;
 
-// default parameters for blobApi
 $blobBaseUrl = 'http://127.0.0.1:8000';
 $bucketIdentifier = 'my-bucket';
 $bucketKey = 'b3fc39dc89a4106a9c529555067722729f3b52c88dfd071bc9fed61345e62eb3';
-
-$oidcProviderUrl = 'https://auth.tugraz.at/auth/realms/some_realm';
+$oidcEnabled = true;
+$oidcProviderUrl = 'https://auth.example.com/auth/realms/some_realm';
 $oidcClientId = 'client-id';
 $oidcClientSecret = 'client-secret';
 
@@ -20,7 +20,7 @@ try {
     // create the API
     $blobApi = BlobApi::createHttpModeApi(
         $bucketIdentifier, $bucketKey, $blobBaseUrl,
-        true /* OIDC enabled */, $oidcProviderUrl, $oidcClientId, $oidcClientSecret);
+        $oidcEnabled, $oidcProviderUrl, $oidcClientId, $oidcClientSecret);
 
     $blobFile = new BlobFile();
     $filePath = 'files/myFile.txt';

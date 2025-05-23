@@ -21,7 +21,7 @@ Here is an example of how to use the library in HTTP mode, with OIDC authenticat
     // create the API
     $blobApi = BlobApi::createHttpModeApi(
         $bucketIdentifier, $bucketKey, $blobBaseUrl,
-        true /* OIDC enabled */, $oidcProviderUrl, $oidcClientId, $oidcClientSecret);
+        $oidcEnabled, $oidcProviderUrl, $oidcClientId, $oidcClientSecret);
 
     $blobFile = new BlobFile();
     $filePath = 'files/myFile.txt';
