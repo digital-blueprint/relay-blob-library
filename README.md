@@ -39,7 +39,7 @@ Here is an example of how to use the library in HTTP mode, with OIDC authenticat
     $blobApi->removeFile($blobFile->getIdentifier());
 ```
 
-- For the whole example PHP code, see [examples](./examples/)
+- For the whole example PHP code, see [BlobApiExamples.php](./examples/BlobApiExamples.php)
 
 ## Integration into a Symfony bundle
 
