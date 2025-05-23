@@ -10,6 +10,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Utils;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -232,13 +233,27 @@ class HttpFileApi implements BlobFileApiInterface
 
         try {
             if ($file = $blobFile->getFile()) {
+                /** @var resource|StreamInterface|string|null $fileContents */
+                $fileContents = null;
                 if ($file instanceof \SplFileInfo) {
-                    $fileHandle = fopen($file->getRealPath(), 'r');
-                    $file = Utils::streamFor();
+                    try {
+                        if ($realPath = $file->getRealPath()) {
+                            $fileHandle = fopen($realPath, 'r');
+                            if ($fileHandle !== false) {
+                                $fileContents = Utils::streamFor($fileHandle);
+                            }
+                        }
+                    } catch (\Exception) {
+                    }
+                    if ($fileContents === null) {
+                        throw new BlobApiError('Failed to read input file', BlobApiError::FILE_NOT_READABLE);
+                    }
+                } else {
+                    $fileContents = $file;
                 }
                 $multipart[] = [
                     'name' => 'file',
-                    'contents' => $file,
+                    'contents' => $fileContents,
                     'filename' => $blobFile->getFileName() ?? '',
                 ];
                 if ($this->sendChecksums) {

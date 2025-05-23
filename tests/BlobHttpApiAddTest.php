@@ -97,6 +97,20 @@ class BlobHttpApiAddTest extends BlobHttpApiTestBase
         $this->assertEquals('1234', $blobFile->getIdentifier());
     }
 
+    public function testAddFileSplFileInfoNotReadable(): void
+    {
+        $blobFile = new BlobFile();
+        $blobFile->setPrefix('prefix');
+        $blobFile->setFileName('test.txt');
+        $blobFile->setFile(new \SplFileInfo(__DIR__.'/foo.txt'));
+
+        try {
+            $this->blobApi->addFile($blobFile);
+        } catch (BlobApiError $blobApiError) {
+            $this->assertEquals(BlobApiError::FILE_NOT_READABLE, $blobApiError->getErrorId());
+        }
+    }
+
     public function testAddFileStreamInterfaceSuccess(): void
     {
         $this->createMockClient([

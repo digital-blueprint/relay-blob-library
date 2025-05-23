@@ -13,6 +13,7 @@ class BlobApiError extends \Exception
 {
     public const FILE_NOT_FOUND = 'blob-library:file-not-found';
     public const CONFIGURATION_INVALID = 'blob-library:configuration-invalid';
+    public const FILE_NOT_READABLE = 'blob-library:file-not-readable';
     public const REQUIRED_PARAMETER_MISSING = 'blob-library:required-parameter-missing';
     public const CONNECT_ERROR = 'blob-library:connect-error';
     public const SERVER_ERROR = 'blob-library:server-error';
