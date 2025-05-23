@@ -245,16 +245,16 @@ class HttpFileApi implements BlobFileApiInterface
                         }
                     } catch (\Exception) {
                     }
-                    if ($fileContents === null) {
-                        throw new BlobApiError('Failed to read input file', BlobApiError::FILE_NOT_READABLE);
-                    }
                 } else {
                     $fileContents = $file;
+                }
+                if ($fileContents === null) {
+                    throw new BlobApiError('Failed to read input file', BlobApiError::FILE_NOT_READABLE);
                 }
                 $multipart[] = [
                     'name' => 'file',
                     'contents' => $fileContents,
-                    'filename' => $blobFile->getFileName() ?? '',
+                    'filename' => $blobFile->getFileName() ?? 'unknown',
                 ];
                 if ($this->sendChecksums) {
                     $multipart[] = [
