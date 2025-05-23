@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.3.5
+
+- always send a filename on POST/PATCH so that the file attribute is recognized as a file
+
 ## v0.3.4
 
 - Fix addFile with \SplFileInfo (HTTP mode)
