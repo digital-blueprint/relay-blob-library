@@ -17,16 +17,18 @@ $oidcClientId = 'client-id';
 $oidcClientSecret = 'client-secret';
 
 try {
+    // create the API
     $blobApi = BlobApi::createHttpModeApi(
         $bucketIdentifier, $bucketKey, $blobBaseUrl,
-        true, $oidcProviderUrl, $oidcClientId, $oidcClientSecret);
+        true /* OIDC enabled */, $oidcProviderUrl, $oidcClientId, $oidcClientSecret);
+
+    $blobFile = new BlobFile();
+    $filePath = 'files/myFile.txt';
+    $blobFile->setFilename(basename($filePath));
+    $blobFile->setFile(new SplFileInfo($filePath));
+    $blobFile->setPrefix('my-prefix');
 
     // add a file
-    $blobFile = new BlobFile();
-    $fileName = 'myFile.txt';
-    $blobFile->setFilename($fileName);
-    $blobFile->setFile(fopen($fileName, 'r'));
-    $blobFile->setPrefix('my-prefix');
     $blobFile = $blobApi->addFile($blobFile);
 
     // get the file
@@ -59,4 +61,5 @@ try {
     echo 'An error occurred: '.$blobApiError->getMessage()."\n";
     echo 'Error ID: '.$blobApiError->getErrorId()."\n";
     echo 'Blob error ID: '.$blobApiError->getBlobErrorId()."\n";
+    echo 'Status code: '.$blobApiError->getStatusCode()."\n";
 }
