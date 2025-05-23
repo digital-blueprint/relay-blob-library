@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.3.4
+
+- Fix addFile with \SplFileInfo (HTTP mode)
+
 ## v0.3.3
 
 - Add createSignedUrl method
