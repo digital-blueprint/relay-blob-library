@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## v0.3.6
+
+- restrict the allowed types of file input to string, StreamInterface and SplFileInfo
+
 ## v0.3.5
 
 - always send a filename on POST/PATCH so that the file attribute is recognized as a file
