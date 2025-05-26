@@ -71,7 +71,6 @@ class BlobHttpApiTestBase extends TestCase
         if (in_array($method, ['POST', 'PATCH'], true)) {
             $this->assertStringStartsWith('multipart/form-data', $request->getHeaderLine('Content-Type'));
         }
-        // $this->assertStringStartsWith('Bearer ', $request->getHeaderLine('Authorization'));
 
         $this->validateUrl($request->getUri()->__toString(), $method, $identifier, $appendix, $extraQueryParams);
     }
@@ -86,10 +85,24 @@ class BlobHttpApiTestBase extends TestCase
             '/blob/files'.($identifier ? '/'.$identifier : '').($action ? '/'.$action : ''), $path);
         $this->assertEquals(self::BLOB_BASE_URL, $uri->getScheme().'://'.$uri->getHost());
 
+        $query = $uri->getQuery();
+        $queryParts = explode('&', $query);
+        $queryParams = [];
+        foreach ($queryParts as $queryParts) {
+            $parts = explode('=', $queryParts);
+            $queryParams[$parts[0]] = urldecode($parts[1]);
+        }
+
+        // consider that the second the url was created might have passed
+        $dateTime = new \DateTimeImmutable();
+        $dateTimeString = $dateTime->format(\DateTimeInterface::ATOM);
+        $dateTimeMinusOneSecondString = $dateTime->modify('-1 second')->format(\DateTimeInterface::ATOM);
+        $this->assertTrue(in_array($queryParams['creationTime'], [$dateTimeString, $dateTimeMinusOneSecondString], true));
+
         $extraQueryParameters = array_merge($extraQueryParameters, [
             'bucketIdentifier' => self::BUCKET_IDENTIFIER,
             'method' => $method,
-            'creationTime' => date('c'),
+            'creationTime' => $queryParams['creationTime'],  // and use the original creation time for comparison
         ]);
 
         $query = $uri->getQuery();
@@ -103,13 +116,11 @@ class BlobHttpApiTestBase extends TestCase
         ];
         $expectedSig = SignatureTools::createSignature(self::BUCKET_KEY, $payload);
 
-        $queryParams = explode('&', $query);
-        foreach ($queryParams as $queryParam) {
-            $parts = explode('=', $queryParam);
-            if ($parts[0] === 'sig') {
-                $this->assertEquals($expectedSig, $parts[1]);
+        foreach ($queryParams as $paramName => $paramValue) {
+            if ($paramName === 'sig') {
+                $this->assertEquals($expectedSig, $paramValue);
             } else {
-                $this->assertEquals($extraQueryParameters[$parts[0]], urldecode($parts[1]));
+                $this->assertEquals($extraQueryParameters[$paramName], $paramValue);
             }
         }
     }
