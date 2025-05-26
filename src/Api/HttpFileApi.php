@@ -10,7 +10,6 @@ use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Utils;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\StreamInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -232,34 +231,29 @@ class HttpFileApi implements BlobFileApiInterface
         $fileHandle = null;
 
         try {
-            if ($file = $blobFile->getFile()) {
-                /** @var resource|StreamInterface|string|null $fileContents */
-                $fileContents = null;
+            if (($file = $blobFile->getFile()) !== null) {
                 if ($file instanceof \SplFileInfo) {
-                    try {
-                        if ($realPath = $file->getRealPath()) {
-                            $fileHandle = fopen($realPath, 'r');
-                            if ($fileHandle !== false) {
-                                $fileContents = Utils::streamFor($fileHandle);
-                            }
-                        }
-                    } catch (\Exception) {
+                    if ($realPath = $file->getRealPath()) {
+                        $fileHandle = fopen($realPath, 'r');
                     }
+                    if (false === is_resource($fileHandle)) {
+                        throw new BlobApiError('Failed to read input file', BlobApiError::FILE_NOT_READABLE);
+                    }
+                    $fileResource = $fileHandle;
                 } else {
-                    $fileContents = $file;
+                    $fileResource = $file;
                 }
-                if ($fileContents === null) {
-                    throw new BlobApiError('Failed to read input file', BlobApiError::FILE_NOT_READABLE);
-                }
+                $fileStream = Utils::streamFor($fileResource);
+
                 $multipart[] = [
                     'name' => 'file',
-                    'contents' => $fileContents,
+                    'contents' => $fileStream,
                     'filename' => $blobFile->getFileName() ?? 'unknown',
                 ];
                 if ($this->sendChecksums) {
                     $multipart[] = [
                         'name' => 'fileHash',
-                        'contents' => SignatureTools::generateSha256Checksum($file),
+                        'contents' => SignatureTools::generateSha256Checksum($fileStream),
                     ];
                 }
             }

@@ -18,7 +18,7 @@ class BlobFile
     }
 
     /**
-     * @return \SplFileInfo|StreamInterface|resource|string|null
+     * @return \SplFileInfo|StreamInterface|string|null
      */
     public function getFile(): mixed
     {
@@ -26,7 +26,7 @@ class BlobFile
     }
 
     /**
-     * @param \SplFileInfo|StreamInterface|resource|string|null $file
+     * @param \SplFileInfo|StreamInterface|string|null $file
      */
     public function setFile(mixed $file): void
     {

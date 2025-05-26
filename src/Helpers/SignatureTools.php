@@ -59,7 +59,7 @@ class SignatureTools
     }
 
     /**
-     * @param \SplFileInfo|StreamInterface|resource|string $data
+     * @param StreamInterface|string $data
      */
     public static function generateSha256Checksum(mixed $data): string
     {
@@ -67,25 +67,8 @@ class SignatureTools
 
         if (is_string($data)) {
             return hash($algorithm, $data);
-        } elseif ($data instanceof \SplFileInfo) {
-            return hash_file($algorithm, $data->getRealPath());
-        } elseif (is_resource($data)) {
-            $hashContext = hash_init($algorithm);
-            while (feof($data) === false) {
-                hash_update($hashContext, fread($data, 1024));
-            }
-            rewind($data);
-
-            return hash_final($hashContext);
         } elseif ($data instanceof StreamInterface) {
-            $stream = Utils::streamFor($data);
-            $hashContext = hash_init($algorithm);
-            while ($stream->eof() === false) {
-                hash_update($hashContext, $stream->read(1024));
-            }
-            $data->rewind();
-
-            return hash_final($hashContext);
+            return Utils::hash($data, $algorithm);
         } else {
             throw new \InvalidArgumentException('generateSha256Checksum: Unsupported data type.');
         }

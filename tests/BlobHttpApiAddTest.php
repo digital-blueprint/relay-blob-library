@@ -64,24 +64,6 @@ class BlobHttpApiAddTest extends BlobHttpApiTestBase
         ]);
     }
 
-    /**
-     * @throws BlobApiError
-     */
-    public function testAddFileResourceSuccess(): void
-    {
-        $this->createMockClient([
-            new Response(200, [], '{"identifier":"1234"}'),
-        ]);
-
-        $blobFile = new BlobFile();
-        $blobFile->setPrefix('prefix');
-        $blobFile->setFileName('test.txt');
-        $blobFile->setFile(fopen(__DIR__.'/test.txt', 'r'));
-
-        $blobFile = $this->blobApi->addFile($blobFile);
-        $this->assertEquals('1234', $blobFile->getIdentifier());
-    }
-
     public function testAddFileSplFileInfoSuccess(): void
     {
         $this->createMockClient([
