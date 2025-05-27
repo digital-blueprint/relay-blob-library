@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v0.3.7
+
 - change the signature of BlobFileApiInterface::getFileResponse to getFileStream returning a BlobFileStream instance
 
 ## v0.3.6
