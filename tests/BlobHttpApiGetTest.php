@@ -221,7 +221,7 @@ class BlobHttpApiGetTest extends BlobHttpApiTestBase
     /**
      * @throws BlobApiError
      */
-    public function testGetFileResponseSuccess(): void
+    public function testGetFileStreamSuccess(): void
     {
         $requestHistory = [];
         $content = 'this is a data stream';
@@ -229,13 +229,15 @@ class BlobHttpApiGetTest extends BlobHttpApiTestBase
             new Response(200, headers: [
                 'Content-Type' => 'text/plain',
                 'Content-Length' => (string) strlen($content),
+                'Content-Disposition' => 'attachment; filename="test.txt"',
             ], body: $content),
         ], $requestHistory);
 
-        ob_start();
-        $this->blobApi->getFileResponse('1234')->sendContent();
-        $actualContent = ob_get_clean();
-        $this->assertEquals($content, $actualContent);
+        $blobFileStream = $this->blobApi->getFileStream('1234');
+        $this->assertEquals($blobFileStream->getFileName(), 'test.txt');
+        $this->assertEquals($blobFileStream->getFileSize(), strlen($content));
+        $this->assertEquals($blobFileStream->getMimeType(), 'text/plain');
+        $this->assertEquals($content, $blobFileStream->getFileStream()->getContents());
 
         $request = $requestHistory[0]['request'];
         assert($request instanceof Request);
@@ -245,7 +247,7 @@ class BlobHttpApiGetTest extends BlobHttpApiTestBase
     /**
      * @throws BlobApiError
      */
-    public function testGetFileResponseSuccessAuthenticated(): void
+    public function testGetFileStreamSuccessAuthenticated(): void
     {
         $this->createWithAuthentication();
 
@@ -257,27 +259,29 @@ class BlobHttpApiGetTest extends BlobHttpApiTestBase
             new Response(200, headers: [
                 'Content-Type' => 'text/plain',
                 'Content-Length' => (string) strlen($content),
+                'Content-Disposition' => 'attachment; filename="test.txt"',
             ], body: $content),
         ], $requestHistory);
 
-        ob_start();
-        $this->blobApi->getFileResponse('1234')->sendContent();
-        $actualContent = ob_get_clean();
-        $this->assertEquals($content, $actualContent);
+        $blobFileStream = $this->blobApi->getFileStream('1234');
+        $this->assertEquals($blobFileStream->getFileName(), 'test.txt');
+        $this->assertEquals($blobFileStream->getFileSize(), strlen($content));
+        $this->assertEquals($blobFileStream->getMimeType(), 'text/plain');
+        $this->assertEquals($content, $blobFileStream->getFileStream()->getContents());
 
         $request = $requestHistory[2]['request'];
         assert($request instanceof Request);
         $this->validateRequest($request, 'GET', '1234', 'download');
     }
 
-    public function testGetFileResponseForbidden(): void
+    public function testGetFileStreamForbidden(): void
     {
         $this->createMockClient([
             new Response(403, body: '{"relay:errorId":"blob:check-signature-creation-time-bad-format"}'),
         ]);
 
         try {
-            $this->blobApi->getFileResponse('1234')->sendContent();
+            $this->blobApi->getFileStream('1234');
             $this->fail('Expected BlobApiError');
         } catch (BlobApiError $blobApiError) {
             $this->assertEquals(BlobApiError::CLIENT_ERROR, $blobApiError->getErrorId());
@@ -288,14 +292,14 @@ class BlobHttpApiGetTest extends BlobHttpApiTestBase
         }
     }
 
-    public function testGetFileResponseServerError(): void
+    public function testGetFileStreamServerError(): void
     {
         $this->createMockClient([
             new Response(500, body: '{"relay:errorId":"blob:something", "relay:errorDetails": {"foo":"bar"}}'),
         ]);
 
         try {
-            $this->blobApi->getFileResponse('1234')->sendContent();
+            $this->blobApi->getFileStream('1234');
             $this->fail('Expected BlobApiError');
         } catch (BlobApiError $blobApiError) {
             $this->assertEquals(BlobApiError::SERVER_ERROR, $blobApiError->getErrorId());

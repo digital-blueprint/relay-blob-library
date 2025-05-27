@@ -10,8 +10,6 @@ use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Utils;
 use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class HttpFileApi implements BlobFileApiInterface
 {
@@ -180,21 +178,30 @@ class HttpFileApi implements BlobFileApiInterface
         }
     }
 
-    public function getFileResponse(string $bucketIdentifier, string $identifier, array $options = []): Response
+    public function getFileStream(string $bucketIdentifier, string $identifier, array $options = []): BlobFileStream
     {
-        $url = $this->createSignedUrlInternal($bucketIdentifier, 'GET', [], $options, $identifier, self::DOWNLOAD_ACTION);
+        try {
+            $url = $this->createSignedUrlInternal($bucketIdentifier, 'GET', [], $options, $identifier, self::DOWNLOAD_ACTION);
+            $response = $this->request('GET', $url, [RequestOptions::STREAM => true]);
 
-        return new StreamedResponse(function () use ($url) {
-            try {
-                $response = $this->request('GET', $url, [RequestOptions::STREAM => true]);
-            } catch (\Throwable $exception) {
-                throw BlobApiError::createFromRequestException($exception, 'Downloading file failed');
-            }
-            $body = $response->getBody();
-            while (!$body->eof()) {
-                echo $body->read(1024);
-            }
-        });
+            return new BlobFileStream(
+                $response->getBody(),
+                self::getFilenameFromContentDispositionHeader($response->getHeaderLine('Content-Disposition')),
+                $response->getHeaderLine('Content-Type'),
+                intval($response->getHeaderLine('Content-Length'))
+            );
+        } catch (\Throwable $exception) {
+            throw BlobApiError::createFromRequestException($exception, 'Downloading file failed');
+        }
+    }
+
+    private static function getFilenameFromContentDispositionHeader(string $headerLine): ?string
+    {
+        if (preg_match('/filename[^;=\n]*=((["\']).*?\2|[^;\n]*)/', $headerLine, $matches)) {
+            return trim($matches[1], '"');
+        }
+
+        return null;
     }
 
     /**

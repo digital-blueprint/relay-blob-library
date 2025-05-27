@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\BlobLibrary\Api;
 
-use Symfony\Component\HttpFoundation\Response;
-
 interface BlobFileApiInterface
 {
     /**
@@ -43,7 +41,7 @@ interface BlobFileApiInterface
     /**
      * @throws BlobApiError
      */
-    public function getFileResponse(string $bucketIdentifier, string $identifier, array $options = []): Response;
+    public function getFileStream(string $bucketIdentifier, string $identifier, array $options = []): BlobFileStream;
 
     /**
      * @throws BlobApiError

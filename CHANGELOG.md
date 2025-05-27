@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- change the signature of BlobFileApiInterface::getFileResponse to getFileStream returning a BlobFileStream instance
+
 ## v0.3.6
 
 - restrict the allowed types of file input to string, StreamInterface and SplFileInfo

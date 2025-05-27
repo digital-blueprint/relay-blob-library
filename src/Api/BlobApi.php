@@ -7,7 +7,6 @@ namespace Dbp\Relay\BlobLibrary\Api;
 use Symfony\Component\Config\Definition\Builder\ArrayNodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\HttpFoundation\Response;
 
 class BlobApi
 {
@@ -313,9 +312,9 @@ class BlobApi
     /**
      * @throws BlobApiError
      */
-    public function getFileResponse(string $identifier, array $options = []): Response
+    public function getFileStream(string $identifier, array $options = []): BlobFileStream
     {
-        return $this->blobFileApiImpl->getFileResponse($this->bucketIdentifier, $identifier, $options);
+        return $this->blobFileApiImpl->getFileStream($this->bucketIdentifier, $identifier, $options);
     }
 
     /**
