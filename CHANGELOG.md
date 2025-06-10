@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## v0.3.9
+## v0.3.10
 
 - Add test utils
 - Change return type of getFiles from to array to iterable
