@@ -61,5 +61,7 @@ class BlobHttpApiTest extends BlobHttpApiTestBase
             [BlobApi::INCLUDE_DELETE_AT_OPTION => true], '1234', 'download');
         $this->validateUrl($url, 'GET', identifier: '1234',
             action: 'download', extraQueryParameters: [BlobApi::INCLUDE_DELETE_AT_OPTION => '1']);
+
+        $this->assertTrue(true);
     }
 }

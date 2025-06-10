@@ -77,8 +77,8 @@ class BlobHttpApiTestBase extends TestCase
     protected function validateUrl(string $url, string $method, ?string $identifier = null,
         ?string $action = null, array $extraQueryParameters = []): void
     {
-        TestUtils::validateSignedUrl($this, self::BUCKET_IDENTIFIER, self::BUCKET_KEY, self::BLOB_BASE_URL,
-            $url, $method, $identifier, $action, $extraQueryParameters);
+        TestUtils::validateSignedUrl(self::BUCKET_IDENTIFIER, self::BUCKET_KEY,
+            self::BLOB_BASE_URL, $url, $method, $identifier, $action, $extraQueryParameters);
     }
 
     protected function createMockClient(array $responses, &$requestHistory = null): void

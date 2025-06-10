@@ -5,23 +5,29 @@ declare(strict_types=1);
 namespace Dbp\Relay\BlobLibrary\Helpers;
 
 use GuzzleHttp\Psr7\Uri;
-use PHPUnit\Framework\Assert;
 
 class TestUtils
 {
     /**
      * @param string $url The signed blob URL to validate
+     *
+     * @throws \Exception
      */
-    public static function validateSignedUrl(Assert $assert, string $bucketIdentifier, string $bucketKey, string $blobBaseUrl,
+    public static function validateSignedUrl(string $bucketIdentifier, string $bucketKey, string $expectedBlobBaseUrl,
         string $url, string $method, ?string $identifier = null,
         ?string $action = null, array $extraQueryParameters = []): void
     {
         $uri = new Uri($url);
 
         $path = $uri->getPath();
-        $assert->assertEquals(
-            '/blob/files'.($identifier ? '/'.$identifier : '').($action ? '/'.$action : ''), $path);
-        $assert->assertEquals($blobBaseUrl, $uri->getScheme().'://'.$uri->getHost());
+        $expectedPath = '/blob/files'.($identifier ? '/'.$identifier : '').($action ? '/'.$action : '');
+        if ($path !== $expectedPath) {
+            throw new \Exception("path '$path' does not match expected '$expectedPath'");
+        }
+        $blobBaseUrl = $uri->getScheme().'://'.$uri->getHost();
+        if ($blobBaseUrl !== $expectedBlobBaseUrl) {
+            throw new \Exception("blobBaseUrl '$blobBaseUrl' does not match expected '$expectedBlobBaseUrl'");
+        }
 
         $query = $uri->getQuery();
         $queryParts = explode('&', $query);
@@ -35,7 +41,9 @@ class TestUtils
         $dateTime = new \DateTimeImmutable();
         $dateTimeString = $dateTime->format(\DateTimeInterface::ATOM);
         $dateTimeMinusOneSecondString = $dateTime->modify('-1 second')->format(\DateTimeInterface::ATOM);
-        $assert->assertEquals(true, in_array($queryParams['creationTime'], [$dateTimeString, $dateTimeMinusOneSecondString], true));
+        if (false === in_array($queryParams['creationTime'], [$dateTimeString, $dateTimeMinusOneSecondString], true)) {
+            throw new \Exception("creationTime '$queryParams[creationTime]' is not as expected");
+        }
 
         $extraQueryParameters = array_merge($extraQueryParameters, [
             'bucketIdentifier' => $bucketIdentifier,
@@ -55,10 +63,9 @@ class TestUtils
         $expectedSig = SignatureTools::createSignature($bucketKey, $payload);
 
         foreach ($queryParams as $paramName => $paramValue) {
-            if ($paramName === 'sig') {
-                $assert->assertEquals($expectedSig, $paramValue);
-            } else {
-                $assert->assertEquals($extraQueryParameters[$paramName], $paramValue);
+            $expectedValue = $paramName === 'sig' ? $expectedSig : $extraQueryParameters[$paramName];
+            if ($paramValue !== $expectedValue) {
+                throw new \Exception("value of query parameter '$paramName' '$paramValue' does not match expected value '$expectedValue'");
             }
         }
     }
