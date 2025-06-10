@@ -32,11 +32,11 @@ interface BlobFileApiInterface
     public function getFile(string $bucketIdentifier, string $identifier, array $options = []): BlobFile;
 
     /**
-     * @return BlobFile[]
+     * @return iterable<BlobFile>
      *
      * @throws BlobApiError
      */
-    public function getFiles(string $bucketIdentifier, int $currentPage = 1, int $maxNumItemsPerPage = 30, array $options = []): array;
+    public function getFiles(string $bucketIdentifier, int $currentPage = 1, int $maxNumItemsPerPage = 30, array $options = []): iterable;
 
     /**
      * @throws BlobApiError

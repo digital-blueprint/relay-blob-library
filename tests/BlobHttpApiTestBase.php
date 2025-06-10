@@ -7,13 +7,12 @@ namespace Dbp\Relay\BlobLibrary\Tests;
 use Dbp\Relay\BlobLibrary\Api\BlobApi;
 use Dbp\Relay\BlobLibrary\Api\BlobApiError;
 use Dbp\Relay\BlobLibrary\Api\HttpFileApi;
-use Dbp\Relay\BlobLibrary\Helpers\SignatureTools;
+use Dbp\Relay\BlobLibrary\Helpers\TestUtils;
 use GuzzleHttp\Client;
 use GuzzleHttp\Handler\MockHandler;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Psr7\Request;
-use GuzzleHttp\Psr7\Uri;
 use PHPUnit\Framework\TestCase;
 
 class BlobHttpApiTestBase extends TestCase
@@ -78,51 +77,8 @@ class BlobHttpApiTestBase extends TestCase
     protected function validateUrl(string $url, string $method, ?string $identifier = null,
         ?string $action = null, array $extraQueryParameters = []): void
     {
-        $uri = new Uri($url);
-
-        $path = $uri->getPath();
-        $this->assertEquals(
-            '/blob/files'.($identifier ? '/'.$identifier : '').($action ? '/'.$action : ''), $path);
-        $this->assertEquals(self::BLOB_BASE_URL, $uri->getScheme().'://'.$uri->getHost());
-
-        $query = $uri->getQuery();
-        $queryParts = explode('&', $query);
-        $queryParams = [];
-        foreach ($queryParts as $queryParts) {
-            $parts = explode('=', $queryParts);
-            $queryParams[$parts[0]] = urldecode($parts[1]);
-        }
-
-        // consider that the second the url was created might have passed
-        $dateTime = new \DateTimeImmutable();
-        $dateTimeString = $dateTime->format(\DateTimeInterface::ATOM);
-        $dateTimeMinusOneSecondString = $dateTime->modify('-1 second')->format(\DateTimeInterface::ATOM);
-        $this->assertTrue(in_array($queryParams['creationTime'], [$dateTimeString, $dateTimeMinusOneSecondString], true));
-
-        $extraQueryParameters = array_merge($extraQueryParameters, [
-            'bucketIdentifier' => self::BUCKET_IDENTIFIER,
-            'method' => $method,
-            'creationTime' => $queryParams['creationTime'],  // and use the original creation time for comparison
-        ]);
-
-        $query = $uri->getQuery();
-        $pos = strrpos($query, '&');
-        $queryWithoutSig = substr($query, 0, $pos);
-
-        $url = $path.'?'.$queryWithoutSig;
-        $checksum = SignatureTools::generateSha256Checksum($url);
-        $payload = [
-            'ucs' => $checksum,
-        ];
-        $expectedSig = SignatureTools::createSignature(self::BUCKET_KEY, $payload);
-
-        foreach ($queryParams as $paramName => $paramValue) {
-            if ($paramName === 'sig') {
-                $this->assertEquals($expectedSig, $paramValue);
-            } else {
-                $this->assertEquals($extraQueryParameters[$paramName], $paramValue);
-            }
-        }
+        TestUtils::validateSignedUrl($this, self::BUCKET_IDENTIFIER, self::BUCKET_KEY, self::BLOB_BASE_URL,
+            $url, $method, $identifier, $action, $extraQueryParameters);
     }
 
     protected function createMockClient(array $responses, &$requestHistory = null): void

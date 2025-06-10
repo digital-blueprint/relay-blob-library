@@ -97,7 +97,21 @@ class BlobHttpApiRemoveTest extends BlobHttpApiTestBase
     }
 
     /**
-     * 404 errors are ignored.
+     * @throws BlobApiError
+     */
+    public function testRemoveFiles(): void
+    {
+        $this->createMockClient([
+            new Response(200, body: '{"hydra:member": [{"identifier":"1234"}]}'),
+            new Response(204),
+        ]);
+
+        $this->blobApi->removeFiles(['prefix' => 'my-prefix']);
+        $this->assertTrue(true);
+    }
+
+    /**
+     * 404 errors on deleting single files are to be ignored.
      */
     public function testRemoveFilesNotFound(): void
     {

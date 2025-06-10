@@ -54,56 +54,6 @@ class BlobHttpApiGetTest extends BlobHttpApiTestBase
     /**
      * @throws BlobApiError
      */
-    public function testGetFilesSuccess(): void
-    {
-        $requestHistory = [];
-        $this->createMockClient([
-            new Response(200, body: '{"hydra:member": [{"identifier":"1234"},{"identifier":"1235"}]}'),
-        ], $requestHistory);
-
-        $blobFiles = $this->blobApi->getFiles();
-        $this->assertCount(2, $blobFiles);
-        $this->assertEquals('1234', $blobFiles[0]->getIdentifier());
-        $this->assertEquals('1235', $blobFiles[1]->getIdentifier());
-
-        $request = $requestHistory[0]['request'];
-        assert($request instanceof Request);
-        $this->validateRequest($request, 'GET', extraQueryParams: [
-            'page' => '1',
-            'perPage' => '30',
-        ]);
-    }
-
-    /**
-     * @throws BlobApiError
-     */
-    public function testGetFilesSuccessAuthenticated(): void
-    {
-        $this->createWithAuthentication();
-
-        $requestHistory = [];
-        $this->createMockClient([
-            new Response(201, [], '{"token_endpoint": "https://example.com/get_token"}'),
-            new Response(201, [], '{"access_token": "foobar", "expires_in": 3600}'),
-            new Response(200, body: '{"hydra:member": [{"identifier":"1234"},{"identifier":"1235"}]}'),
-        ], $requestHistory);
-
-        $blobFiles = $this->blobApi->getFiles();
-        $this->assertCount(2, $blobFiles);
-        $this->assertEquals('1234', $blobFiles[0]->getIdentifier());
-        $this->assertEquals('1235', $blobFiles[1]->getIdentifier());
-
-        $request = $requestHistory[2]['request'];
-        assert($request instanceof Request);
-        $this->validateRequest($request, 'GET', extraQueryParams: [
-            'page' => '1',
-            'perPage' => '30',
-        ]);
-    }
-
-    /**
-     * @throws BlobApiError
-     */
     public function testGetFileIncludeDataSuccess(): void
     {
         $requestHistory = [];
@@ -164,24 +114,6 @@ class BlobHttpApiGetTest extends BlobHttpApiTestBase
         }
     }
 
-    public function testGetFilesForbidden(): void
-    {
-        $this->createMockClient([
-            new Response(403, [], '{"relay:errorId":"blob:check-signature-creation-time-bad-format"}'),
-        ]);
-
-        try {
-            $this->blobApi->getFiles();
-            $this->fail('Expected BlobApiError');
-        } catch (BlobApiError $blobApiError) {
-            $this->assertEquals(BlobApiError::CLIENT_ERROR, $blobApiError->getErrorId());
-            $this->assertEquals('Getting files failed', $blobApiError->getMessage());
-            $this->assertEquals(403, $blobApiError->getStatusCode());
-            $this->assertEquals('blob:check-signature-creation-time-bad-format', $blobApiError->getBlobErrorId());
-            $this->assertEquals([], $blobApiError->getBlobErrorDetails());
-        }
-    }
-
     public function testGettingFileServerError(): void
     {
         $this->createMockClient([
@@ -200,6 +132,74 @@ class BlobHttpApiGetTest extends BlobHttpApiTestBase
         }
     }
 
+    /**
+     * @throws BlobApiError
+     */
+    public function testGetFilesSuccess(): void
+    {
+        $requestHistory = [];
+        $this->createMockClient([
+            new Response(200, body: '{"hydra:member": [{"identifier":"1234"},{"identifier":"1235"}]}'),
+        ], $requestHistory);
+
+        $blobFiles = iterator_to_array($this->blobApi->getFiles());
+        $this->assertCount(2, $blobFiles);
+        $this->assertEquals('1234', $blobFiles[0]->getIdentifier());
+        $this->assertEquals('1235', $blobFiles[1]->getIdentifier());
+
+        $request = $requestHistory[0]['request'];
+        assert($request instanceof Request);
+        $this->validateRequest($request, 'GET', extraQueryParams: [
+            'page' => '1',
+            'perPage' => '30',
+        ]);
+    }
+
+    /**
+     * @throws BlobApiError
+     */
+    public function testGetFilesSuccessAuthenticated(): void
+    {
+        $this->createWithAuthentication();
+
+        $requestHistory = [];
+        $this->createMockClient([
+            new Response(201, [], '{"token_endpoint": "https://example.com/get_token"}'),
+            new Response(201, [], '{"access_token": "foobar", "expires_in": 3600}'),
+            new Response(200, body: '{"hydra:member": [{"identifier":"1234"},{"identifier":"1235"}]}'),
+        ], $requestHistory);
+
+        $blobFiles = iterator_to_array($this->blobApi->getFiles());
+        $this->assertCount(2, $blobFiles);
+        $this->assertEquals('1234', $blobFiles[0]->getIdentifier());
+        $this->assertEquals('1235', $blobFiles[1]->getIdentifier());
+
+        $request = $requestHistory[2]['request'];
+        assert($request instanceof Request);
+        $this->validateRequest($request, 'GET', extraQueryParams: [
+            'page' => '1',
+            'perPage' => '30',
+        ]);
+    }
+
+    public function testGetFilesForbidden(): void
+    {
+        $this->createMockClient([
+            new Response(403, [], '{"relay:errorId":"blob:check-signature-creation-time-bad-format"}'),
+        ]);
+
+        try {
+            iterator_to_array($this->blobApi->getFiles());
+            $this->fail('Expected BlobApiError');
+        } catch (BlobApiError $blobApiError) {
+            $this->assertEquals(BlobApiError::CLIENT_ERROR, $blobApiError->getErrorId());
+            $this->assertEquals('Getting files failed', $blobApiError->getMessage());
+            $this->assertEquals(403, $blobApiError->getStatusCode());
+            $this->assertEquals('blob:check-signature-creation-time-bad-format', $blobApiError->getBlobErrorId());
+            $this->assertEquals([], $blobApiError->getBlobErrorDetails());
+        }
+    }
+
     public function testGettingFilesServerError(): void
     {
         $this->createMockClient([
@@ -207,7 +207,7 @@ class BlobHttpApiGetTest extends BlobHttpApiTestBase
         ]);
 
         try {
-            $this->blobApi->getFiles();
+            iterator_to_array($this->blobApi->getFiles());
             $this->fail('Expected BlobApiError');
         } catch (BlobApiError $blobApiError) {
             $this->assertEquals(BlobApiError::SERVER_ERROR, $blobApiError->getErrorId());

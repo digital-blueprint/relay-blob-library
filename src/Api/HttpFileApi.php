@@ -102,25 +102,22 @@ class HttpFileApi implements BlobFileApiInterface
      */
     public function removeFiles(string $bucketIdentifier, array $options = []): void
     {
-        // TODO: filtering
         $currentPage = 1;
         $maxNumItemsPerPage = 100;
-        $files = [];
         do {
-            $filePage = $this->getFiles($bucketIdentifier, $currentPage, $maxNumItemsPerPage, $options);
-            array_push($files, ...$filePage);
-            ++$currentPage;
-        } while (count($filePage) === $maxNumItemsPerPage);
-
-        foreach ($files as $file) {
-            try {
-                $this->removeFile($bucketIdentifier, $file->getIdentifier());
-            } catch (BlobApiError $exception) {
-                if ($exception->getErrorId() !== BlobApiError::FILE_NOT_FOUND) {
-                    throw $exception;
+            $numPageFiles = 0;
+            foreach ($this->getFiles($bucketIdentifier, $currentPage, $maxNumItemsPerPage, $options) as $file) {
+                try {
+                    $this->removeFile($bucketIdentifier, $file->getIdentifier());
+                } catch (BlobApiError $exception) {
+                    if ($exception->getErrorId() !== BlobApiError::FILE_NOT_FOUND) {
+                        throw $exception;
+                    }
                 }
+                ++$numPageFiles;
             }
-        }
+            ++$currentPage;
+        } while ($numPageFiles >= $maxNumItemsPerPage);
     }
 
     /**
@@ -145,7 +142,7 @@ class HttpFileApi implements BlobFileApiInterface
     /**
      * @throws BlobApiError
      */
-    public function getFiles(string $bucketIdentifier, int $currentPage = 1, int $maxNumItemsPerPage = 30, array $options = []): array
+    public function getFiles(string $bucketIdentifier, int $currentPage = 1, int $maxNumItemsPerPage = 30, array $options = []): iterable
     {
         $parameters = [
             'page' => $currentPage,
@@ -160,21 +157,19 @@ class HttpFileApi implements BlobFileApiInterface
 
         try {
             $response = $this->request('GET', $url, $requestOptions);
-            try {
-                $responseDecoded =
-                    json_decode($response->getBody()->getContents(), true, flags: JSON_THROW_ON_ERROR);
-            } catch (\JsonException) {
-                throw new BlobApiError('Response is not valid JSON', BlobApiError::INVALID_RESPONSE);
-            }
-
-            $fileDataCollection = [];
-            foreach ($responseDecoded['hydra:member'] as $fileData) {
-                $fileDataCollection[] = new BlobFile($fileData);
-            }
-
-            return $fileDataCollection;
         } catch (\Throwable $exception) {
             throw BlobApiError::createFromRequestException($exception, 'Getting files failed');
+        }
+
+        try {
+            $responseDecoded =
+                json_decode($response->getBody()->getContents(), true, flags: JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            throw new BlobApiError('Response is not valid JSON', BlobApiError::INVALID_RESPONSE);
+        }
+
+        foreach ($responseDecoded['hydra:member'] as $fileData) {
+            yield new BlobFile($fileData);
         }
     }
 

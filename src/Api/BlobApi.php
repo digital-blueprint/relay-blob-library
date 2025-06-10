@@ -17,15 +17,7 @@ class BlobApi
 
     public const DELETE_IN_OPTION = 'deleteIn';
     public const DISABLE_OUTPUT_VALIDATION_OPTION = 'disableOutputValidation';
-
-    /**
-     * @deprecated
-     */
     public const PREFIX_STARTS_WITH_OPTION = 'startsWith';
-
-    /**
-     * @deprecated
-     */
     public const PREFIX_OPTION = 'prefix';
 
     public static function getConfigNodeDefinition(): ArrayNodeDefinition
@@ -196,17 +188,11 @@ class BlobApi
         return $options[self::DELETE_IN_OPTION] ?? null;
     }
 
-    /**
-     * @deprecated
-     */
     public static function setPrefix(array &$options, string $prefix): void
     {
         $options[self::PREFIX_OPTION] = $prefix;
     }
 
-    /**
-     * @deprecated
-     */
     public static function getPrefix(array $options): ?string
     {
         return $options[self::PREFIX_OPTION] ?? null;
@@ -220,9 +206,6 @@ class BlobApi
         $options[self::PREFIX_STARTS_WITH_OPTION] = $prefixStartsWith;
     }
 
-    /**
-     * @deprecated
-     */
     public static function getPrefixStartsWith(array $options): bool
     {
         return $options[self::PREFIX_STARTS_WITH_OPTION] ?? false;
@@ -304,7 +287,7 @@ class BlobApi
     /**
      * @throws BlobApiError
      */
-    public function getFiles(int $currentPage = 1, int $maxNumItemsPerPage = 30, array $options = []): array
+    public function getFiles(int $currentPage = 1, int $maxNumItemsPerPage = 30, array $options = []): iterable
     {
         return $this->blobFileApiImpl->getFiles($this->bucketIdentifier, $currentPage, $maxNumItemsPerPage, $options);
     }

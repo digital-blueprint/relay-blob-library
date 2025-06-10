@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add test utils
+- Change return type of getFiles from to array to iterable
+
 ## v0.3.7
 
 - change the signature of BlobFileApiInterface::getFileResponse to getFileStream returning a BlobFileStream instance
