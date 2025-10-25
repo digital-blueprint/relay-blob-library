@@ -1582,20 +1582,20 @@
         },
         {
             "name": "web-token/jwt-library",
-            "version": "4.0.6",
+            "version": "4.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/web-token/jwt-library.git",
-                "reference": "a66842fc1fe797136a1058d01c19e2c2e2a34d62"
+                "reference": "b05d01d4138b1e06328e29075a21a6da974935df"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/web-token/jwt-library/zipball/a66842fc1fe797136a1058d01c19e2c2e2a34d62",
-                "reference": "a66842fc1fe797136a1058d01c19e2c2e2a34d62",
+                "url": "https://api.github.com/repos/web-token/jwt-library/zipball/b05d01d4138b1e06328e29075a21a6da974935df",
+                "reference": "b05d01d4138b1e06328e29075a21a6da974935df",
                 "shasum": ""
             },
             "require": {
-                "brick/math": "^0.12|^0.13",
+                "brick/math": "^0.12|^0.13|^0.14",
                 "php": ">=8.2",
                 "psr/clock": "^1.0",
                 "spomky-labs/pki-framework": "^1.2.1"
@@ -1655,7 +1655,7 @@
             ],
             "support": {
                 "issues": "https://github.com/web-token/jwt-library/issues",
-                "source": "https://github.com/web-token/jwt-library/tree/4.0.6"
+                "source": "https://github.com/web-token/jwt-library/tree/4.1.0"
             },
             "funding": [
                 {
@@ -1667,7 +1667,7 @@
                     "type": "patreon"
                 }
             ],
-            "time": "2025-08-13T20:11:07+00:00"
+            "time": "2025-10-22T08:01:38+00:00"
         }
     ],
     "packages-dev": [
