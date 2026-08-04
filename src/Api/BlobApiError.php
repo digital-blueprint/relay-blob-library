@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Dbp\Relay\BlobLibrary\Api;
 
+use GuzzleHttp\Exception\BadResponseException;
 use GuzzleHttp\Exception\ClientException;
-use GuzzleHttp\Exception\ConnectException;
-use GuzzleHttp\Exception\ServerException;
+use Psr\Http\Client\NetworkExceptionInterface;
 use Symfony\Component\HttpFoundation\Response;
 
 class BlobApiError extends \Exception
@@ -28,9 +28,11 @@ class BlobApiError extends \Exception
         $blobErrorId = null;
         $blobErrorDetails = [];
         $statusCode = null;
-        if ($throwable instanceof ConnectException) {
+        // NOTE: NetworkExceptionInterface (PSR-18) is implemented by Guzzle 7's ConnectException
+        // and by Guzzle 8's NetworkException (the base class of ConnectException).
+        if ($throwable instanceof NetworkExceptionInterface) {
             $errorId = self::CONNECT_ERROR;
-        } elseif (($throwable instanceof ClientException || $throwable instanceof ServerException) && $throwable->hasResponse()) {
+        } elseif ($throwable instanceof BadResponseException) {
             $response = $throwable->getResponse();
             $statusCode = $response->getStatusCode();
             $errorId = $throwable instanceof ClientException ? self::CLIENT_ERROR : self::SERVER_ERROR;

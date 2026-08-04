@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add support for guzzlehttp/guzzle v8 and guzzlehttp/psr7 v3
+
 ## v0.3.10
 
 - Add test utils
