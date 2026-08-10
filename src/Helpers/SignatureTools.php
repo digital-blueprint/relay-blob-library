@@ -69,9 +69,9 @@ class SignatureTools
             return hash($algorithm, $data);
         } elseif ($data instanceof StreamInterface) {
             return Utils::hash($data, $algorithm);
-        } else {
-            throw new \InvalidArgumentException('generateSha256Checksum: Unsupported data type.');
         }
+        /** @phpstan-ignore deadCode.unreachable */
+        throw new \InvalidArgumentException('generateSha256Checksum: Unsupported data type.');
     }
 
     /**
