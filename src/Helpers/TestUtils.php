@@ -37,6 +37,10 @@ class TestUtils
             $queryParams[$parts[0]] = urldecode($parts[1]);
         }
 
+        if (!isset($queryParams['sig'])) {
+            throw new \Exception("Missing query parameter 'sig'");
+        }
+
         // consider that the second the url was created might have passed
         $dateTime = new \DateTimeImmutable();
         $dateTimeString = $dateTime->format(\DateTimeInterface::ATOM);
