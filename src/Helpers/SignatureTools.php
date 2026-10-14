@@ -133,25 +133,28 @@ class SignatureTools
      *
      * @param string $token   the JWS token as string
      * @param array  $payload to extract from token on success
-     *
-     * @throws BlobApiError
      */
     private static function verifyToken(JWK $jwk, string $token, array &$payload): bool
     {
         $algorithmManager = new AlgorithmManager([new HS256()]);
         $jwsVerifier = new JWSVerifier($algorithmManager);
         $serializerManager = new JWSSerializerManager([new CompactSerializer()]);
-        $jws = $serializerManager->unserialize($token);
-
-        if ($ok = $jwsVerifier->verifyWithKey($jws, $jwk, 0)) {
-            try {
-                $payload = json_decode($jws->getPayload(), true, 512, JSON_THROW_ON_ERROR);
-            } catch (\JsonException $e) {
-                throw new BlobApiError('JWS payload is not valid JSON', BlobApiError::INVALID_SIGNATURE);
+        try {
+            $jws = $serializerManager->unserialize($token);
+            if (!$jwsVerifier->verifyWithKey($jws, $jwk, 0)) {
+                return false;
             }
+
+            $data = json_decode($jws->getPayload(), true, 512, JSON_THROW_ON_ERROR);
+            if (!is_array($data)) {
+                return false;
+            }
+            $payload = $data;
+        } catch (\Throwable) {
+            return false;
         }
 
-        return $ok;
+        return true;
     }
 
     /**

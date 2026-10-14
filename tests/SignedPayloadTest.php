@@ -90,6 +90,15 @@ class SignedPayloadTest extends TestCase
         }
     }
 
+    public function testMalformedAlgorithmIsRejected(): void
+    {
+        $this->expectException(BlobApiError::class);
+        $this->expectExceptionMessage('Invalid signature');
+
+        // The protected header contains {"alg":[]}.
+        SignatureTools::verifySignature(str_repeat('s', 32), 'eyJhbGciOltdfQ.e30.aW52YWxpZA');
+    }
+
     public function testInvalidSignature(): void
     {
         $secret = bin2hex(random_bytes(32));
