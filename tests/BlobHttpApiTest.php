@@ -22,6 +22,15 @@ class BlobHttpApiTest extends BlobHttpApiTestBase
         $this->assertInstanceOf(HttpFileApi::class, $this->blobApi->getBlobFileApiImpl());
     }
 
+    public function testSignedUrlPreservesZeroPrefix(): void
+    {
+        $url = $this->blobApi->createSignedUrl('GET',
+            options: [BlobApi::PREFIX_OPTION => '0']);
+
+        $this->assertStringContainsString('&prefix=0&sig=', $url);
+        $this->validateUrl($url, 'GET', extraQueryParameters: ['prefix' => '0']);
+    }
+
     /**
      * @throws BlobApiError
      */

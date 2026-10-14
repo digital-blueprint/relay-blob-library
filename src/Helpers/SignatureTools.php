@@ -199,7 +199,7 @@ class SignatureTools
         if ($deleteIn = BlobApi::getDeleteIn($options)) {
             $queryParameters['deleteIn'] = $deleteIn;
         }
-        if ($prefix = BlobApi::getPrefix($options)) {
+        if (($prefix = BlobApi::getPrefix($options)) !== null && $prefix !== '') {
             $queryParameters['prefix'] = $prefix;
         }
         if (BlobApi::getPrefixStartsWith($options)) {

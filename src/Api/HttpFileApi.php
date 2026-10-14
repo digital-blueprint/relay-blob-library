@@ -216,7 +216,7 @@ class HttpFileApi implements BlobFileApiInterface
         $method = $isAdd ? 'POST' : 'PATCH';
 
         $parameters = [];
-        if ($prefix = $blobFile->getPrefix()) {
+        if (($prefix = $blobFile->getPrefix()) !== null && $prefix !== '') {
             $parameters['prefix'] = $prefix;
         }
         if ($type = $blobFile->getType()) {
