@@ -31,6 +31,16 @@ class BlobHttpApiTest extends BlobHttpApiTestBase
         $this->validateUrl($url, 'GET', extraQueryParameters: ['prefix' => '0']);
     }
 
+    public function testSignedUrlWithTrailingSlash(): void
+    {
+        $this->blobApi = BlobApi::createHttpModeApi(self::BUCKET_IDENTIFIER, self::BUCKET_KEY,
+            self::BLOB_BASE_URL.'/');
+
+        $url = $this->blobApi->createSignedUrl('GET');
+        $this->assertStringStartsWith(self::BLOB_BASE_URL.'/blob/files?', $url);
+        $this->validateUrl($url, 'GET');
+    }
+
     /**
      * @throws BlobApiError
      */

@@ -179,7 +179,7 @@ class SignatureTools
             throw new BlobApiError('Blob request could not be signed', BlobApiError::CREATING_SIGNATURE_FAILED);
         }
 
-        return $blobBaseUrl.$pathAndQuery.'&sig='.$signature;
+        return rtrim($blobBaseUrl, '/').$pathAndQuery.'&sig='.$signature;
     }
 
     private static function createQueryParameters(string $bucketIdentifier,
